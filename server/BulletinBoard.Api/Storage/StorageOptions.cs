@@ -1,7 +1,7 @@
 namespace BulletinBoard.Api.Storage;
 
 /// <summary>The "Storage" section of appsettings.json.</summary>
-public sealed class StorageOptions
+public class StorageOptions
 {
     /// <summary>
     /// Folder that holds ads.json, ads.version and ads.lock. Relative paths are resolved against the
@@ -26,4 +26,17 @@ public sealed class StorageOptions
     public int MaxPins { get; set; } = 2_000;
 
     public TimeSpan LockTimeout => TimeSpan.FromSeconds(LockTimeoutSeconds);
+}
+
+/// <summary>The three files of the store, all in one folder.</summary>
+public sealed record StorageFolder(string Path)
+{
+    public string AdsFile => System.IO.Path.Combine(Path, "ads.json");
+    public string VersionFile => System.IO.Path.Combine(Path, "ads.version");
+    public string LockFile(string name) => System.IO.Path.Combine(Path, name + ".lock");
+
+    public static StorageFolder Resolve(string folderPath, string contentRoot) =>
+        new(System.IO.Path.GetFullPath(System.IO.Path.IsPathRooted(folderPath)
+            ? folderPath
+            : System.IO.Path.Combine(contentRoot, folderPath)));
 }
