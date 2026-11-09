@@ -4,7 +4,7 @@ using BulletinBoard.Api.Models;
 namespace BulletinBoard.Api.Dtos;
 
 /// <summary>Body of POST and PUT. Id and dates are set by the server, never by the client.</summary>
-public sealed class AdUpsertRequest : IValidatableObject
+public class AdUpsertRequest : IValidatableObject
 {
     [Required, StringLength(100, MinimumLength = 3)]
     public string Title { get; init; } = "";

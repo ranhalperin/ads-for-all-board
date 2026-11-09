@@ -1,7 +1,8 @@
 using BulletinBoard.Api.Geo;
 using BulletinBoard.Api.Models;
+using BulletinBoard.Api.Repositories;
 
-namespace BulletinBoard.Api.Repositories;
+namespace BulletinBoard.Api.Repositories.JsonFile;
 
 /// <summary>
 /// Runs an <see cref="AdSearch"/> over ads held in memory. Used by <see cref="JsonFileAdRepository"/>;

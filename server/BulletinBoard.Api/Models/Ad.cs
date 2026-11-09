@@ -4,7 +4,7 @@ namespace BulletinBoard.Api.Models;
 /// An ad as stored in ads.json. Immutable: an edit creates a new instance (<c>with</c>),
 /// so a list handed to readers never changes under them.
 /// </summary>
-public sealed record Ad
+public record Ad
 {
     public required Guid Id { get; init; }
     public required string Title { get; init; }

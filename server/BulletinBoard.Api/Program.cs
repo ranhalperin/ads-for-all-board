@@ -1,5 +1,6 @@
 using BulletinBoard.Api.Errors;
 using BulletinBoard.Api.Repositories;
+using BulletinBoard.Api.Repositories.JsonFile;
 using BulletinBoard.Api.Services;
 using BulletinBoard.Api.Storage;
 

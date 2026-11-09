@@ -14,7 +14,7 @@ namespace BulletinBoard.Api.Storage;
 /// </summary>
 public sealed class SharedFileLock(StorageFolder folder, int retryMinMs = 25, int retryMaxMs = 100) : IDistributedLock
 {
-    public async Task<IAsyncDisposable> AtomicLockBetweenServers(string name, TimeSpan timeout, CancellationToken ct)
+    public async Task<IAsyncDisposable> LockShareAdsFile(string name, TimeSpan timeout, CancellationToken ct)
     {
         var path = folder.GetLockFile(name);
         var waited = Stopwatch.StartNew();

@@ -7,7 +7,7 @@ namespace BulletinBoard.Api.Dtos;
 /// Query string of GET /api/ads and GET /api/ads/pins. Every filter is optional; all combine with AND.
 /// Results are always newest first.
 /// </summary>
-public sealed class AdQuery : IValidatableObject
+public class AdQuery : IValidatableObject
 {
     /// <summary>Text to find in the ad's title (case-insensitive, partial).</summary>
     [StringLength(100)]

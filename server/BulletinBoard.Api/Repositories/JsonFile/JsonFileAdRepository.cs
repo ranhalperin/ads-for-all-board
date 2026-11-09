@@ -2,8 +2,9 @@ using System.Diagnostics;
 using BulletinBoard.Api.Errors;
 using BulletinBoard.Api.Models;
 using BulletinBoard.Api.Storage;
+using BulletinBoard.Api.Repositories;
 
-namespace BulletinBoard.Api.Repositories;
+namespace BulletinBoard.Api.Repositories.JsonFile;
 
 /// <summary>
 /// Ads in one JSON file, safe for several servers sharing the file's folder.
@@ -142,7 +143,7 @@ public sealed class JsonFileAdRepository(
 
             // Lock between servers: ads.lock stays open (locked) for the whole block,
             // and is closed (released) when the block ends, even if action() throws.
-            await using (var serversLock = await sharedLock.AtomicLockBetweenServers(
+            await using (var serversLock = await sharedLock.LockShareAdsFile(
                              StorageFolder.LockKeyName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct))
             {
                 return await action();

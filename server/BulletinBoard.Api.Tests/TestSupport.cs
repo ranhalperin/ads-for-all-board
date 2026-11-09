@@ -1,5 +1,6 @@
 using BulletinBoard.Api.Models;
 using BulletinBoard.Api.Repositories;
+using BulletinBoard.Api.Repositories.JsonFile;
 using BulletinBoard.Api.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 

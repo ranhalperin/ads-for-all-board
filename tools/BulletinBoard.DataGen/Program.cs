@@ -51,7 +51,7 @@ for (var i = 0; i < count; i++)
 var store = new SharedFolderFileStore(folder);
 var fileLock = new SharedFileLock(folder);
 var timer = Stopwatch.StartNew();
-await using (await fileLock.AtomicLockBetweenServers("ads", TimeSpan.FromSeconds(30), CancellationToken.None))
+await using (await fileLock.LockShareAdsFile("ads", TimeSpan.FromSeconds(30), CancellationToken.None))
 {
     var version = await store.ReadVersionAsync(CancellationToken.None) ?? 0;
     await store.WriteAdsAsync(ads, CancellationToken.None);

@@ -113,12 +113,12 @@ public class StorageTests : IDisposable
         var lockB = new SharedFileLock(_store.Folder, 2, 10);
         Directory.CreateDirectory(_store.Folder.GetPath);
 
-        var held = await lockA.AtomicLockBetweenServers("ads", TimeSpan.FromSeconds(1), default);
+        var held = await lockA.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
         await Assert.ThrowsAsync<StorageBusyException>(() =>
-            lockB.AtomicLockBetweenServers("ads", TimeSpan.FromMilliseconds(200), default));
+            lockB.LockShareAdsFile("ads", TimeSpan.FromMilliseconds(200), default));
 
         await held.DisposeAsync();
-        await using var second = await lockB.AtomicLockBetweenServers("ads", TimeSpan.FromSeconds(1), default);
+        await using var second = await lockB.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class StorageTests : IDisposable
     {
         var server = _store.NewServer();
         var outside = new SharedFileLock(_store.Folder, 2, 10);
-        var held = await outside.AtomicLockBetweenServers("ads", TimeSpan.FromSeconds(1), default);
+        var held = await outside.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
 
         var write = server.AddAsync(Ads.Make("Waited"), default);
         await Task.Delay(150);

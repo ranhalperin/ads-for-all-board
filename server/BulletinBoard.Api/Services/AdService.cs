@@ -8,7 +8,7 @@ using BulletinBoard.Api.Storage;
 namespace BulletinBoard.Api.Services;
 
 /// <summary>Business rules: turns API requests into repository calls, and sets the fields the server owns (id, dates).</summary>
-public sealed class AdService(IAdRepository repository, StorageOptions options, TimeProvider clock) : IAdService
+public class AdService(IAdRepository repository, StorageOptions options, TimeProvider clock) : IAdService
 {
     public async Task<PagedResult<AdResponse>> SearchAsync(AdQuery query, CancellationToken ct)
     {

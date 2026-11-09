@@ -1,6 +1,6 @@
 using BulletinBoard.Api.Models;
 
-namespace BulletinBoard.Api.Repositories;
+namespace BulletinBoard.Api.Repositories.JsonFile;
 
 /// <summary>
 /// The ads of <see cref="JsonFileAdRepository"/> as they were in ads.json at one version.

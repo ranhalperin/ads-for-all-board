@@ -1,6 +1,7 @@
 using BulletinBoard.Api.Geo;
 using BulletinBoard.Api.Models;
 using BulletinBoard.Api.Repositories;
+using BulletinBoard.Api.Repositories.JsonFile;
 
 namespace BulletinBoard.Api.Tests;
 

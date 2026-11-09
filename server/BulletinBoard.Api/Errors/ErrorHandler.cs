@@ -7,7 +7,7 @@ namespace BulletinBoard.Api.Errors;
 /// Turns exceptions into ProblemDetails JSON. Known errors keep their (user-safe) message;
 /// anything else becomes a plain 500 and the details go to the log only.
 /// </summary>
-public sealed class ErrorHandler(IProblemDetailsService problemDetails, ILogger<ErrorHandler> logger) : IExceptionHandler
+public class ErrorHandler(IProblemDetailsService problemDetails, ILogger<ErrorHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken ct)
     {

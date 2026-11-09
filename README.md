@@ -87,7 +87,7 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 +
 |---|---|
 | `AdsController` | HTTP only: binds the request, calls the service |
 | `AdService` | Turns the query string into an `AdSearch` and the results into JSON; sets id / dates, trims text |
-| `JsonFileAdRepository` + `AdFilter` | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
+| `JsonFileAdRepository` + `AdFilter` (`Repositories.JsonFile`; the contract `IAdRepository` and its search types stay in `Repositories`) | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
 | `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |

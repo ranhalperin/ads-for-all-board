@@ -7,7 +7,7 @@ namespace BulletinBoard.Api.Repositories;
 /// What to find, as the repository understands it (no HTTP details). Every criterion is optional and
 /// they combine with AND. Results always come newest first.
 /// </summary>
-public sealed record AdSearch
+public record AdSearch
 {
     /// <summary>Text the title must contain (case-insensitive).</summary>
     public string? Title { get; init; }

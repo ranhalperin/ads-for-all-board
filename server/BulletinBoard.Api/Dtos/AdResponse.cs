@@ -5,7 +5,7 @@ namespace BulletinBoard.Api.Dtos;
 /// <summary>
 /// An ad as sent to the browser, with its distance when the search had a location.
 /// </summary>
-public sealed record AdResponse(
+public record AdResponse(
     Guid Id,
     string Title,
     string Description,
