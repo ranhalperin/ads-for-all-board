@@ -14,8 +14,8 @@ public class StorageTests : IDisposable
     {
         var server = _store.NewServer();
         Assert.Empty(await server.AllAsync());
-        Assert.True(File.Exists(_store.Folder.AdsFile));
-        Assert.Equal("0", await File.ReadAllTextAsync(_store.Folder.VersionFile));
+        Assert.True(File.Exists(_store.Folder.GetAdsFile()));
+        Assert.Equal("0", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class StorageTests : IDisposable
         await server.UpdateAsync(ad with { Title = "Changed" }, default);
         await server.DeleteAsync(ad.Id, default);
 
-        Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.VersionFile));
+        Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
         Assert.Empty(Directory.GetFiles(_store.Folder.Path, "*.tmp"));
     }
 
@@ -88,7 +88,7 @@ public class StorageTests : IDisposable
         var all = await _store.NewServer().AllAsync();
         Assert.Equal(2 * perServer, all.Count);
         Assert.Equal(2 * perServer, all.Select(a => a.Id).Distinct().Count());
-        Assert.Equal((2 * perServer).ToString(), await File.ReadAllTextAsync(_store.Folder.VersionFile));
+        Assert.Equal((2 * perServer).ToString(), await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class StorageTests : IDisposable
         await Assert.ThrowsAsync<NotFoundException>(() =>
             server.DeleteAsync(Guid.NewGuid(), default));
 
-        Assert.Equal("1", await File.ReadAllTextAsync(_store.Folder.VersionFile));
+        Assert.Equal("1", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
     }
 
     [Fact]

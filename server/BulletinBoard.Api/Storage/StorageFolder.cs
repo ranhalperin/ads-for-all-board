@@ -10,14 +10,18 @@ public class StorageFolder(string path)
         ? throw new ArgumentException("A storage folder is required.", nameof(path))
         : path;
 
-    /// <summary>The ads themselves.</summary>
-    public string AdsFile { get; } = IOPath.Combine(path, "ads.json");
+    // Built once: the folder never changes.
+    private readonly string _adsFile = IOPath.Combine(path, "ads.json");
+    private readonly string _versionFile = IOPath.Combine(path, "ads.version");
 
-    /// <summary>A counter, bumped on every write, so each server knows when to reload.</summary>
-    public string VersionFile { get; } = IOPath.Combine(path, "ads.version");
+    /// <summary>The ads themselves (ads.json).</summary>
+    public string GetAdsFile() => _adsFile;
+
+    /// <summary>A counter, bumped on every write, so each server knows when to reload (ads.version).</summary>
+    public string GetVersionFile() => _versionFile;
 
     /// <summary>The file held open exclusively while one server writes (for example "ads" → ads.lock).</summary>
-    public string LockFile(string name) => IOPath.Combine(Path, name + ".lock");
+    public string GetLockFile(string name) => IOPath.Combine(Path, name + ".lock");
 
     /// <summary>A relative folder path is taken from <paramref name="contentRoot"/> (the API's folder).</summary>
     public static StorageFolder Resolve(string folderPath, string contentRoot) =>

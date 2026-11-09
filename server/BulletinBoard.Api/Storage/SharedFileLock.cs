@@ -16,7 +16,7 @@ public sealed class SharedFileLock(StorageFolder folder, int retryMinMs = 25, in
 {
     public async Task<IAsyncDisposable> AcquireAsync(string name, TimeSpan timeout, CancellationToken ct)
     {
-        var path = folder.LockFile(name);
+        var path = folder.GetLockFile(name);
         var waited = Stopwatch.StartNew();
         while (true)
         {

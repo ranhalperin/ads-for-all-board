@@ -58,5 +58,5 @@ await using (await fileLock.AcquireAsync("ads", TimeSpan.FromSeconds(30), Cancel
     await store.WriteVersionAsync(version + 1, CancellationToken.None);
 }
 
-var size = new FileInfo(folder.AdsFile).Length;
-Console.WriteLine($"Wrote {count:N0} ads to {folder.AdsFile} ({size / 1024.0 / 1024.0:N1} MB) in {timer.ElapsedMilliseconds:N0} ms");
+var size = new FileInfo(folder.GetAdsFile()).Length;
+Console.WriteLine($"Wrote {count:N0} ads to {folder.GetAdsFile()} ({size / 1024.0 / 1024.0:N1} MB) in {timer.ElapsedMilliseconds:N0} ms");

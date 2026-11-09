@@ -21,14 +21,14 @@ public sealed class SharedFolderFileStore : IFileStore
 
     public async Task<List<Ad>> ReadAdsAsync(CancellationToken ct)
     {
-        await using var stream = new FileStream(_folder.AdsFile, FileMode.Open, FileAccess.Read,
+        await using var stream = new FileStream(_folder.GetAdsFile(), FileMode.Open, FileAccess.Read,
             FileShare.Read, BufferSize, useAsync: true);
         return await JsonSerializer.DeserializeAsync<List<Ad>>(stream, JsonDefaults.Options, ct) ?? [];
     }
 
     public async Task WriteAdsAsync(IReadOnlyCollection<Ad> ads, CancellationToken ct)
     {
-        var temp = _folder.AdsFile + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        var temp = _folder.GetAdsFile() + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
             await using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write,
@@ -38,7 +38,7 @@ public sealed class SharedFolderFileStore : IFileStore
                 await stream.FlushAsync(ct);
                 stream.Flush(flushToDisk: true);
             }
-            await MoveWithRetryAsync(temp, _folder.AdsFile, ct);
+            await MoveWithRetryAsync(temp, _folder.GetAdsFile(), ct);
         }
         finally
         {
@@ -52,7 +52,7 @@ public sealed class SharedFolderFileStore : IFileStore
         {
             // Opening the file (not just checking its timestamp) is what makes NFS return fresh
             // contents: close-to-open consistency. Share flags let a writer replace it meanwhile.
-            await using var stream = new FileStream(_folder.VersionFile, FileMode.Open, FileAccess.Read,
+            await using var stream = new FileStream(_folder.GetVersionFile(), FileMode.Open, FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete, 64, useAsync: true);
             using var reader = new StreamReader(stream, Encoding.ASCII);
             var text = await reader.ReadToEndAsync(ct);
@@ -66,7 +66,7 @@ public sealed class SharedFolderFileStore : IFileStore
 
     public async Task WriteVersionAsync(long version, CancellationToken ct)
     {
-        await using var stream = new FileStream(_folder.VersionFile, FileMode.OpenOrCreate, FileAccess.Write,
+        await using var stream = new FileStream(_folder.GetVersionFile(), FileMode.OpenOrCreate, FileAccess.Write,
             FileShare.ReadWrite | FileShare.Delete, 64, useAsync: true);
         var bytes = Encoding.ASCII.GetBytes(version.ToString());
         stream.SetLength(0);
@@ -78,29 +78,29 @@ public sealed class SharedFolderFileStore : IFileStore
     private void EnsureFiles(string? seedFile)
     {
         Directory.CreateDirectory(_folder.Path);
-        if (!File.Exists(_folder.AdsFile))
+        if (!File.Exists(_folder.GetAdsFile()))
         {
             try
             {
                 if (seedFile is not null && File.Exists(seedFile))
-                    File.Copy(seedFile, _folder.AdsFile, overwrite: false);
+                    File.Copy(seedFile, _folder.GetAdsFile(), overwrite: false);
                 else
-                    File.WriteAllText(_folder.AdsFile, "[]");
+                    File.WriteAllText(_folder.GetAdsFile(), "[]");
             }
-            catch (IOException) when (File.Exists(_folder.AdsFile))
+            catch (IOException) when (File.Exists(_folder.GetAdsFile()))
             {
                 // Another server created it first.
             }
         }
 
-        if (!File.Exists(_folder.VersionFile))
+        if (!File.Exists(_folder.GetVersionFile()))
         {
             try
             {
-                using var stream = new FileStream(_folder.VersionFile, FileMode.CreateNew, FileAccess.Write);
+                using var stream = new FileStream(_folder.GetVersionFile(), FileMode.CreateNew, FileAccess.Write);
                 stream.Write("0"u8);
             }
-            catch (IOException) when (File.Exists(_folder.VersionFile))
+            catch (IOException) when (File.Exists(_folder.GetVersionFile()))
             {
             }
         }
