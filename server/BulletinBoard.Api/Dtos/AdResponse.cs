@@ -26,11 +26,3 @@ public sealed record AdResponse(
         ad.ImageUrl, ad.Latitude, ad.Longitude, ad.Address, ad.CreatedAt, ad.UpdatedAt,
         distanceKm is null ? null : Math.Round(distanceKm.Value, 2));
 }
-
-public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);
-
-/// <summary>The light shape the map needs for one pin.</summary>
-public sealed record AdPin(Guid Id, string Title, Category Category, double Latitude, double Longitude);
-
-/// <summary>Pins for the map. <see cref="Truncated"/> is true when more ads matched than were sent.</summary>
-public sealed record PinsResult(IReadOnlyList<AdPin> Pins, int Total, bool Truncated);
