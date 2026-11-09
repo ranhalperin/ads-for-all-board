@@ -50,11 +50,10 @@ public sealed class JsonFileAdRepository(
             return updated;
         }, ct);
 
-    public Task DeleteAsync(Guid id, Action<Ad> check, CancellationToken ct) =>
+    public Task DeleteAsync(Guid id, CancellationToken ct) =>
         MutateAsync(ads =>
         {
             var index = IndexOf(ads, id);
-            check(ads[index]);
             ads.RemoveAt(index);
             return true;
         }, ct);
@@ -102,7 +101,7 @@ public sealed class JsonFileAdRepository(
                 ? new List<Ad>(_snapshot.Ads)
                 : await store.ReadAdsAsync(ct);
 
-            var result = change(ads); // may throw (not found, forbidden, full): nothing has been written yet
+            var result = change(ads); // may throw (not found, full): nothing has been written yet
 
             // From here on, finish the write even if the caller goes away, so the file and version agree.
             var next = version + 1;

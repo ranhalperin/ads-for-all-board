@@ -36,7 +36,7 @@ public class StorageTests : IDisposable
         var ad = Ads.Make();
         await server.AddAsync(ad, default);
         await server.UpdateAsync(ad.Id, a => a with { Title = "Changed" }, default);
-        await server.DeleteAsync(ad.Id, _ => { }, default);
+        await server.DeleteAsync(ad.Id, default);
 
         Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.VersionFile));
         Assert.Empty(Directory.GetFiles(_store.Folder.Path, "*.tmp"));
@@ -110,10 +110,10 @@ public class StorageTests : IDisposable
         var ad = Ads.Make();
         await server.AddAsync(ad, default);
 
-        await Assert.ThrowsAsync<ForbiddenException>(() =>
-            server.UpdateAsync(ad.Id, _ => throw new ForbiddenException("no"), default));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            server.UpdateAsync(ad.Id, _ => throw new InvalidOperationException("no"), default));
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            server.DeleteAsync(Guid.NewGuid(), _ => { }, default));
+            server.DeleteAsync(Guid.NewGuid(), default));
 
         Assert.Equal("1", await File.ReadAllTextAsync(_store.Folder.VersionFile));
     }

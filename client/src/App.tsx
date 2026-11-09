@@ -7,6 +7,7 @@ import { AdsMap } from './components/AdsMap'
 import { FiltersBar } from './components/FiltersBar'
 import { getCurrentLocation } from './geo'
 import { useDebounced } from './hooks'
+import { loadMyName, saveMyName } from './myName'
 import { t } from './strings'
 import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type PagedResult, type PanelState, type PinsResult } from './types'
 
@@ -18,6 +19,7 @@ export default function App() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [page, setPage] = useState(1)
   const [myLocation, setMyLocation] = useState<LatLng | null>(null)
+  const [myName, setMyName] = useState(loadMyName)
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [bounds, setBounds] = useState<Bounds | null>(null)
@@ -34,11 +36,13 @@ export default function App() {
   // Typing in the search box and moving the map settle before they hit the API.
   const debouncedFilters = useDebounced(filters, 300)
   const debouncedBounds = useDebounced(bounds, 400)
-  const listParams = useMemo(() => toQueryParams(debouncedFilters, myLocation, page), [debouncedFilters, myLocation, page])
+  const debouncedName = useDebounced(myName, 300)
+  const context = useMemo(() => ({ location: myLocation, myName: debouncedName }), [myLocation, debouncedName])
+  const listParams = useMemo(() => toQueryParams(debouncedFilters, context, page), [debouncedFilters, context, page])
   // The map gets the same filters, limited to the area in view.
   const pinParams = useMemo(
-    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, myLocation), ...boundsParams(debouncedBounds) } : null),
-    [debouncedFilters, myLocation, debouncedBounds],
+    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, context), ...boundsParams(debouncedBounds) } : null),
+    [debouncedFilters, context, debouncedBounds],
   )
 
   // The list: one page of matching ads.
@@ -73,6 +77,13 @@ export default function App() {
     setFilters((f) => ({ ...f, ...patch }))
     setPage(1)
   }, [])
+
+  /** Your contact name marks your ads; it's remembered in this browser. */
+  const changeMyName = (name: string) => {
+    setMyName(name)
+    saveMyName(name)
+    setPage(1)
+  }
 
   /** Picking a distance needs the user's location; ask for it the first time. "Any" turns the filter off. */
   const changeDistance = async (km: number | null) => {
@@ -115,9 +126,11 @@ export default function App() {
 
       <FiltersBar
         filters={filters}
+        myName={myName}
         locating={locating}
         locationError={locationError}
         onChange={updateFilters}
+        onMyName={changeMyName}
         onDistance={(km) => void changeDistance(km)}
         onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1); setLocationError(null) }}
       />
@@ -129,6 +142,7 @@ export default function App() {
           error={error}
           filtered={filtered}
           selectedId={selectedId}
+          myName={myName}
           onSelect={(ad) => openAd(ad.id, { lat: ad.latitude, lng: ad.longitude })}
           onEdit={(ad) => setPanel({ mode: 'edit', ad })}
           onDelete={(ad) => { openAd(ad.id, { lat: ad.latitude, lng: ad.longitude }); setAskDelete(true) }}
@@ -149,9 +163,11 @@ export default function App() {
           key={selectedId ?? panel.mode}
           state={panel}
           askDelete={askDelete}
+          myName={myName}
           onClose={() => setPanel({ mode: 'closed' })}
           onEdit={(ad) => setPanel({ mode: 'edit', ad })}
           onSaved={(ad) => {
+            changeMyName(ad.contactName) // the name you post under is how your ads are found
             openAd(ad.id, { lat: ad.latitude, lng: ad.longitude })
             setRefreshKey((k) => k + 1)
           }}

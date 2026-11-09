@@ -3,8 +3,7 @@ using BulletinBoard.Api.Models;
 namespace BulletinBoard.Api.Dtos;
 
 /// <summary>
-/// An ad as sent to the browser. The owner ID is never sent: the server says only whether
-/// the ad is the caller's (<see cref="IsMine"/>), so nobody can copy someone else's owner ID.
+/// An ad as sent to the browser, with its distance when the search had a location.
 /// </summary>
 public sealed record AdResponse(
     Guid Id,
@@ -20,13 +19,11 @@ public sealed record AdResponse(
     string? Address,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    bool IsMine,
     double? DistanceKm)
 {
-    public static AdResponse From(Ad ad, string? callerOwnerId, double? distanceKm = null) => new(
+    public static AdResponse From(Ad ad, double? distanceKm = null) => new(
         ad.Id, ad.Title, ad.Description, ad.Category, ad.Price, ad.ContactName, ad.ContactPhone,
         ad.ImageUrl, ad.Latitude, ad.Longitude, ad.Address, ad.CreatedAt, ad.UpdatedAt,
-        callerOwnerId is not null && ad.OwnerId == callerOwnerId,
         distanceKm is null ? null : Math.Round(distanceKm.Value, 2));
 }
 

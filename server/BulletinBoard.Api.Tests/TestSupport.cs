@@ -34,7 +34,7 @@ public static class Ads
         decimal? price = 100,
         double lat = 32.0853,
         double lng = 34.7818,
-        string owner = "owner-aaaa-0001",
+        string contactName = "Dana",
         DateTime? created = null) => new()
     {
         Id = Guid.NewGuid(),
@@ -42,11 +42,10 @@ public static class Ads
         Description = "Description",
         Category = category,
         Price = price,
-        ContactName = "Dana",
+        ContactName = contactName,
         ContactPhone = "050-1234567",
         Latitude = lat,
         Longitude = lng,
-        OwnerId = owner,
         CreatedAt = created ?? DateTime.UtcNow,
     };
 }

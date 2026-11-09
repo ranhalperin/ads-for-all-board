@@ -11,16 +11,6 @@ public sealed class NotFoundException(string message) : AppException(message)
     public override int StatusCode => StatusCodes.Status404NotFound;
 }
 
-public sealed class ForbiddenException(string message) : AppException(message)
-{
-    public override int StatusCode => StatusCodes.Status403Forbidden;
-}
-
-public sealed class BadRequestException(string message) : AppException(message)
-{
-    public override int StatusCode => StatusCodes.Status400BadRequest;
-}
-
 /// <summary>The board reached Storage:MaxAds.</summary>
 public sealed class StorageFullException(string message) : AppException(message)
 {

@@ -1,5 +1,6 @@
 import { formatPrice } from '../format'
 import { categoryLabel, t } from '../strings'
+import { isMine } from '../myName'
 import type { Ad, PagedResult } from '../types'
 
 interface Props {
@@ -8,13 +9,14 @@ interface Props {
   error: string | null
   filtered: boolean
   selectedId: string | null
+  myName: string
   onSelect: (ad: Ad) => void
   onEdit: (ad: Ad) => void
   onDelete: (ad: Ad) => void
   onPage: (page: number) => void
 }
 
-export function AdsList({ result, loading, error, filtered, selectedId, onSelect, onEdit, onDelete, onPage }: Props) {
+export function AdsList({ result, loading, error, filtered, selectedId, myName, onSelect, onEdit, onDelete, onPage }: Props) {
   const pages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1
 
   return (
@@ -47,7 +49,7 @@ export function AdsList({ result, loading, error, filtered, selectedId, onSelect
               <div className="row-body">
                 <div className="row-title">
                   <span className="title-text">{ad.title}</span>
-                  {ad.isMine && <span className="badge mine">{t.yours}</span>}
+                  {isMine(ad, myName) && <span className="badge mine">{t.yours}</span>}
                 </div>
                 <div className="row-meta">
                   <span className="price">{formatPrice(ad.price)}</span>
@@ -56,7 +58,7 @@ export function AdsList({ result, loading, error, filtered, selectedId, onSelect
                 </div>
                 {ad.address && <div className="row-address">{ad.address}</div>}
               </div>
-              {ad.isMine && (
+              {isMine(ad, myName) && (
                 <div className="row-actions">
                   <button type="button" className="icon" title={t.edit} aria-label={`${t.edit} ${ad.title}`}
                     onClick={(e) => { e.stopPropagation(); onEdit(ad) }}>✎</button>

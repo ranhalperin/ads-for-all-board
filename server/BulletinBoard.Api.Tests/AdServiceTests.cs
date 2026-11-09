@@ -7,8 +7,8 @@ namespace BulletinBoard.Api.Tests;
 
 public class AdServiceTests : IDisposable
 {
-    private const string Me = "owner-me-000001";
-    private const string Other = "owner-other-0001";
+    private const string Dana = "Dana";
+    private const string Yossi = "Yossi";
 
     // Tel Aviv centre; Ramat Gan ~4 km away; Jerusalem ~54 km away.
     private const double TlvLat = 32.0853, TlvLng = 34.7818;
@@ -24,13 +24,13 @@ public class AdServiceTests : IDisposable
     {
         var repo = _store.NewServer();
         var t = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
-        await repo.AddAsync(Ads.Make("City bike", Category.ForSale, 450, TlvLat, TlvLng, Me, t.AddHours(1)), default);
-        await repo.AddAsync(Ads.Make("Mountain BIKE", Category.ForSale, 1200, 32.0809, 34.8143, Other, t.AddHours(2)), default);
-        await repo.AddAsync(Ads.Make("Sofa", Category.ForSale, null, 31.7683, 35.2137, Other, t.AddHours(3)), default);
-        await repo.AddAsync(Ads.Make("Waiter wanted", Category.Jobs, null, 32.0636, 34.7722, Me, t.AddHours(4)), default);
+        await repo.AddAsync(Ads.Make("City bike", Category.ForSale, 450, TlvLat, TlvLng, Dana, t.AddHours(1)), default);
+        await repo.AddAsync(Ads.Make("Mountain BIKE", Category.ForSale, 1200, 32.0809, 34.8143, Yossi, t.AddHours(2)), default);
+        await repo.AddAsync(Ads.Make("Sofa", Category.ForSale, null, 31.7683, 35.2137, Yossi, t.AddHours(3)), default);
+        await repo.AddAsync(Ads.Make("Waiter wanted", Category.Jobs, null, 32.0636, 34.7722, Dana, t.AddHours(4)), default);
     }
 
-    private Task<PagedResult<AdResponse>> Search(AdQuery q, string? owner = Me) => _service.SearchAsync(q, owner, default);
+    private Task<PagedResult<AdResponse>> Search(AdQuery q) => _service.SearchAsync(q, default);
 
     [Fact]
     public async Task Search_matches_the_title_only_ignoring_case()
@@ -76,15 +76,14 @@ public class AdServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Mine_only_and_is_mine_follow_the_caller()
+    public async Task Contact_name_filter_matches_the_whole_name_ignoring_case()
     {
         await SeedAsync();
-        var mine = await Search(new AdQuery { MineOnly = true });
-        Assert.Equal(["Waiter wanted", "City bike"], mine.Items.Select(a => a.Title));
-        Assert.All(mine.Items, a => Assert.True(a.IsMine));
+        var dana = await Search(new AdQuery { ContactName = " dana " });
+        Assert.Equal(["Waiter wanted", "City bike"], dana.Items.Select(a => a.Title));
 
-        var asStranger = await Search(new AdQuery(), owner: null);
-        Assert.All(asStranger.Items, a => Assert.False(a.IsMine));
+        var partial = await Search(new AdQuery { ContactName = "Dan" });
+        Assert.Empty(partial.Items);
     }
 
     [Fact]
@@ -101,38 +100,34 @@ public class AdServiceTests : IDisposable
     {
         await SeedAsync();
         _store.Options.MaxPins = 2;
-        var pins = await _service.GetPinsAsync(new AdQuery(), Me, default);
+        var pins = await _service.GetPinsAsync(new AdQuery(), default);
         Assert.Equal(4, pins.Total);
         Assert.True(pins.Truncated);
         Assert.Equal(["Waiter wanted", "Sofa"], pins.Pins.Select(p => p.Title)); // newest kept
     }
 
     [Fact]
-    public async Task Create_sets_owner_id_and_dates_and_trims_text()
+    public async Task Create_sets_id_and_dates_and_trims_text()
     {
-        var created = await _service.CreateAsync(Request(title: "  Lamp  ", image: " "), Me, default);
+        var created = await _service.CreateAsync(Request(title: "  Lamp  ", image: " "), default);
         Assert.Equal("Lamp", created.Title);
         Assert.Null(created.ImageUrl);
-        Assert.True(created.IsMine);
         Assert.Null(created.UpdatedAt);
         Assert.NotEqual(Guid.Empty, created.Id);
     }
 
     [Fact]
-    public async Task Only_the_owner_can_edit_or_delete()
+    public async Task Edit_keeps_the_created_date_and_delete_removes_the_ad()
     {
-        var ad = await _service.CreateAsync(Request(), Me, default);
+        var ad = await _service.CreateAsync(Request(), default);
 
-        await Assert.ThrowsAsync<ForbiddenException>(() => _service.UpdateAsync(ad.Id, Request(title: "Hacked"), Other, default));
-        await Assert.ThrowsAsync<ForbiddenException>(() => _service.DeleteAsync(ad.Id, Other, default));
-
-        var edited = await _service.UpdateAsync(ad.Id, Request(title: "Edited"), Me, default);
+        var edited = await _service.UpdateAsync(ad.Id, Request(title: "Edited"), default);
         Assert.Equal("Edited", edited.Title);
         Assert.NotNull(edited.UpdatedAt);
         Assert.Equal(ad.CreatedAt, edited.CreatedAt);
 
-        await _service.DeleteAsync(ad.Id, Me, default);
-        await Assert.ThrowsAsync<NotFoundException>(() => _service.GetAsync(ad.Id, Me, default));
+        await _service.DeleteAsync(ad.Id, default);
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.GetAsync(ad.Id, default));
     }
 
     private static AdUpsertRequest Request(string title = "Lamp", string? image = null) => new()

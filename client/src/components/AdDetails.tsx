@@ -9,6 +9,7 @@ import type { Ad } from '../types'
 
 interface Props {
   ad: Ad
+  mine: boolean // the ad's contact name is the user's
   confirmDelete: boolean
   deleting: boolean
   onEdit: () => void
@@ -17,7 +18,7 @@ interface Props {
   onDelete: () => void
 }
 
-export function AdDetails({ ad, confirmDelete, deleting, onEdit, onAskDelete, onCancelDelete, onDelete }: Props) {
+export function AdDetails({ ad, mine, confirmDelete, deleting, onEdit, onAskDelete, onCancelDelete, onDelete }: Props) {
   const [imageOk, setImageOk] = useState(true)
   const point = { lat: ad.latitude, lng: ad.longitude }
 
@@ -27,7 +28,7 @@ export function AdDetails({ ad, confirmDelete, deleting, onEdit, onAskDelete, on
 
       <div className="details-head">
         <span className="badge">{categoryLabel[ad.category]}</span>
-        {ad.isMine && <span className="badge mine">{t.yours}</span>}
+        {mine && <span className="badge mine">{t.yours}</span>}
       </div>
       <h2>{ad.title}</h2>
       <p className="details-price">{formatPrice(ad.price)}</p>
@@ -55,13 +56,13 @@ export function AdDetails({ ad, confirmDelete, deleting, onEdit, onAskDelete, on
         {ad.updatedAt && `, ${t.edited(formatDate(ad.updatedAt))}`}
       </p>
 
-      {ad.isMine && !confirmDelete && (
+      {mine && !confirmDelete && (
         <div className="form-actions">
           <button type="button" className="danger" onClick={onAskDelete}>{t.delete}</button>
           <button type="button" className="primary" onClick={onEdit}>{t.edit}</button>
         </div>
       )}
-      {ad.isMine && confirmDelete && (
+      {mine && confirmDelete && (
         <div className="confirm" role="alertdialog" aria-label={t.deleteConfirm}>
           <p>{t.deleteConfirm}</p>
           <div className="form-actions">

@@ -9,7 +9,7 @@ public static class AdFilter
 {
     public readonly record struct Match(Ad Ad, double? DistanceKm);
 
-    public static List<Match> Apply(IReadOnlyList<Ad> ads, AdQuery q, string? ownerId)
+    public static List<Match> Apply(IReadOnlyList<Ad> ads, AdQuery q)
     {
         IEnumerable<Ad> result = ads;
 
@@ -26,8 +26,9 @@ public static class AdFilter
         if (q.MaxPrice is { } max)
             result = result.Where(a => a.Price <= max);
 
-        if (q.MineOnly)
-            result = ownerId is null ? [] : result.Where(a => a.OwnerId == ownerId);
+        var contactName = q.ContactName?.Trim();
+        if (!string.IsNullOrEmpty(contactName))
+            result = result.Where(a => string.Equals(a.ContactName, contactName, StringComparison.OrdinalIgnoreCase));
 
         if (q.HasBounds)
         {

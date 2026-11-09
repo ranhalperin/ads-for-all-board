@@ -7,10 +7,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BulletinBoard.Api.Tests;
 
-/// <summary>End-to-end through HTTP: routing, validation, the owner header and error shapes.</summary>
+/// <summary>End-to-end through HTTP: routing, validation and error shapes.</summary>
 public class ApiTests : IDisposable
 {
-    private const string Owner = "browser-owner-0001";
     private readonly TempStore _store = new();
     private readonly WebApplicationFactory<Program> _factory;
     private static readonly JsonSerializerOptions Json = JsonDefaults.Configure(new JsonSerializerOptions());
@@ -28,12 +27,7 @@ public class ApiTests : IDisposable
         _store.Dispose();
     }
 
-    private HttpClient Client(string? owner = Owner)
-    {
-        var client = _factory.CreateClient();
-        if (owner is not null) client.DefaultRequestHeaders.Add("X-Owner-Id", owner);
-        return client;
-    }
+    private HttpClient Client() => _factory.CreateClient();
 
     private static object NewAd(string title = "Lamp") => new
     {
@@ -56,7 +50,6 @@ public class ApiTests : IDisposable
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         var ad = (await create.Content.ReadFromJsonAsync<AdResponse>(Json))!;
         Assert.Equal($"/api/ads/{ad.Id}", create.Headers.Location!.AbsolutePath, ignoreCase: true);
-        Assert.True(ad.IsMine);
 
         var page = (await client.GetFromJsonAsync<PagedResult<AdResponse>>("/api/ads?search=lam", Json))!;
         Assert.Equal(1, page.Total);
@@ -70,26 +63,14 @@ public class ApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Writing_without_the_owner_header_is_rejected()
+    public async Task Contact_name_filter_finds_that_persons_ads()
     {
-        var response = await Client(owner: null).PostAsJsonAsync("/api/ads", NewAd());
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("X-Owner-Id", await response.Content.ReadAsStringAsync());
-    }
+        var client = Client();
+        await client.PostAsJsonAsync("/api/ads", NewAd());
+        await client.PostAsJsonAsync("/api/ads", new { title = "Desk", description = "Oak desk", category = "ForSale", contactName = "Yossi", contactPhone = "052-7654321", latitude = 32.07, longitude = 34.79 });
 
-    [Fact]
-    public async Task Someone_elses_ad_cannot_be_edited_or_deleted()
-    {
-        var created = await Client().PostAsJsonAsync("/api/ads", NewAd());
-        var ad = (await created.Content.ReadFromJsonAsync<AdResponse>(Json))!;
-        var stranger = Client("browser-owner-0002");
-
-        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.PutAsJsonAsync($"/api/ads/{ad.Id}", NewAd("Hacked"))).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.DeleteAsync($"/api/ads/{ad.Id}")).StatusCode);
-
-        var seen = (await stranger.GetFromJsonAsync<AdResponse>($"/api/ads/{ad.Id}", Json))!;
-        Assert.False(seen.IsMine);
-        Assert.Equal("Lamp", seen.Title);
+        var dana = (await client.GetFromJsonAsync<PagedResult<AdResponse>>("/api/ads?contactName=dana", Json))!;
+        Assert.Equal("Lamp", Assert.Single(dana.Items).Title);
     }
 
     [Fact]
@@ -111,15 +92,6 @@ public class ApiTests : IDisposable
     [InlineData("/api/ads?pageSize=500")]
     public async Task Invalid_query_returns_400(string url) =>
         Assert.Equal(HttpStatusCode.BadRequest, (await Client().GetAsync(url)).StatusCode);
-
-    [Fact]
-    public async Task Owner_id_is_never_sent_to_the_browser()
-    {
-        await Client().PostAsJsonAsync("/api/ads", NewAd());
-        var body = await Client("browser-owner-0002").GetStringAsync("/api/ads");
-        Assert.DoesNotContain(Owner, body);
-        Assert.DoesNotContain("ownerId", body);
-    }
 
     [Fact]
     public async Task Pins_endpoint_returns_light_pins()

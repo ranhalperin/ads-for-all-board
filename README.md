@@ -2,8 +2,8 @@
 
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 
-- Browse every ad, newest first. **Search by title**, and filter by **my ads**, **category**, **price from–to** and **distance** (within 1–100 km of your location).
-- **Create, edit and delete** your own ads. Other people's ads are read-only.
+- Browse every ad, newest first. **Search by title**, and filter by **my ads** (by your contact name), **category**, **price from–to** and **distance** (within 1–100 km of your location).
+- **Create, edit and delete** your own ads: the ones posted under your contact name.
 - **Bonus:** every ad has a map location, set by address search, "use my location", clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
 
 ![screen](docs/screen.jpg)
@@ -30,7 +30,7 @@ The first run creates `server/BulletinBoard.Api/data/` from `SeedData/ads.json` 
 ### Tests
 
 ```bash
-dotnet test                       # API: 35 tests (filters, ownership, file store, two-server locking, HTTP)
+dotnet test                       # API: 33 tests (filters, file store, two-server locking, HTTP)
 cd client && npm test             # client: query building, validation, address labels
 cd client && npm run typecheck
 ```
@@ -51,7 +51,7 @@ React SPA (one screen)                     .NET 10 API                          
 │ filters │ list │ map │ ▢ │ ────────────► │ AdsController            │        │ ads.json     │ the ads
 │         │      │     │ panel (view /   │ │  → AdService (rules)     │ ─────► │ ads.version  │ a counter
 │         │      │     │ new / edit)     │ │  → JsonFileAdRepository  │        │ ads.lock     │ the lock
-└──────────────────────────┘ X-Owner-Id    └──────────────────────────┘        └──────────────┘
+└──────────────────────────┘               └──────────────────────────┘        └──────────────┘
 ```
 
 ### Client (`client/`)
@@ -61,7 +61,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | Part | What it does |
 |---|---|
 | `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
-| `components/FiltersBar` | Title search (debounced), my ads, category, price from–to, distance (asks for your location the first time) |
+| `components/FiltersBar` | Title search (debounced), my ads (asks for your contact name), category, price from–to, distance (asks for your location the first time) |
 | `components/AdsList` | One page of results, with edit and delete on your own ads |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
@@ -74,25 +74,25 @@ Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API
 
 | Endpoint | |
 |---|---|
-| `GET /api/ads?search=&mineOnly=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
+| `GET /api/ads?search=&contactName=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
 | `GET /api/ads/pins?<same filters>&north=&south=&east=&west=` | Light pins for the map area in view (id, title, category, lat, lng), capped at 2,000 |
 | `GET /api/ads/{id}` | One ad |
 | `POST /api/ads` | Create (201 + Location) |
-| `PUT /api/ads/{id}` | Edit your own ad (403 otherwise) |
-| `DELETE /api/ads/{id}` | Delete your own ad (204; 403 otherwise) |
+| `PUT /api/ads/{id}` | Edit an ad |
+| `DELETE /api/ads/{id}` | Delete an ad (204) |
 
-Errors are `ProblemDetails` JSON: 400 validation (with field errors), 403, 404, 409 when the board is full, 503 + `Retry-After` when the file is busy. A 500 never exposes internals.
+Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 409 when the board is full, 503 + `Retry-After` when the file is busy. A 500 never exposes internals.
 
 | Class | Role |
 |---|---|
-| `AdsController` | HTTP only: reads the `X-Owner-Id` header, calls the service |
-| `AdService` / `AdFilter` | Search (filters, distance, newest first, paging), ownership checks, sets id / owner / dates |
+| `AdsController` | HTTP only: binds the request, calls the service |
+| `AdService` / `AdFilter` | Search (filters, distance, newest first, paging), sets id / dates, trims text |
 | `JsonFileAdRepository` | The in-memory snapshot and the write procedure below |
 | `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
 
-**"My ads"** without accounts: the browser creates a random ID once (localStorage) and sends it as `X-Owner-Id`. The server stores it with each ad, allows edit and delete only when it matches, and **never sends owner IDs back**. It only returns `isMine`, so nobody can copy someone else's ID from the API. This is not real authentication: clearing browser storage loses ownership. A real deployment would put a login (JWT) in its place; only `AdsController.OwnerId()` would change.
+**"My ads" without accounts:** the contact name is the identity. The browser remembers the name you last posted under (localStorage), or the one you type next to "My ads". "My ads" sends it as `contactName` (whole name, ignoring case), and Edit and Delete appear only on ads with that name. The server itself doesn't check who edits or deletes: this keeps the board simple, but anyone who uses the same name, or calls the API directly, can change those ads. A real deployment would add a login (JWT) and store the user id on each ad.
 
 ## Keeping one JSON file consistent across servers
 
@@ -103,7 +103,7 @@ The store is designed for **several API instances sharing one folder**: a local 
 1. `SemaphoreSlim(1,1)`: queues this server's own requests in memory, without blocking threads (`WaitAsync`).
 2. `SharedFileLock`: opens `ads.lock` with `FileShare.None`. The OS, or the NFS/SMB file server, refuses a second exclusive open from any process on any machine. It retries with `await Task.Delay` plus jitter, and gives up with **503** after `LockTimeoutSeconds`. If a server dies while holding it, the OS closes the handle (on NFS, when its lease expires), so it can't stay locked the way a "marker file" lock can.
 3. Read `ads.version`. If another server wrote since this one loaded, re-read `ads.json`.
-4. Apply the change (ownership is checked here, on fresh data).
+4. Apply the change, on fresh data.
 5. Save `ads.json` to a temp file and rename it into place, so a crash never leaves half a file.
 6. Increment `ads.version`.
 
@@ -128,7 +128,7 @@ Measured on a laptop with 100,000 generated ads (47.8 MB file):
 
 The limit comes from the single file: every write rewrites it and every other server reloads it. Beyond ~100K:
 
-- **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each with its own lock and version file, and keep only a slim index in memory (id, title, category, price, lat/lng, owner, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
+- **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each with its own lock and version file, and keep only a slim index in memory (id, title, category, price, lat/lng, contact name, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
 - **Free choice:** a database (PostgreSQL + PostGIS, MongoDB with a geo index, DynamoDB). Only a new `IAdRepository` is needed; the controller, service and client stay the same.
 
 ## Configuration (`appsettings.json`)

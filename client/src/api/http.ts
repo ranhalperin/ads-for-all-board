@@ -1,14 +1,8 @@
 import axios from 'axios'
-import { getOwnerId } from '../owner'
 import { t } from '../strings'
 
-/** One axios client for the API. Every request carries the browser's owner ID. */
+/** One axios client for the API. */
 export const http = axios.create({ baseURL: '/api', timeout: 30_000 })
-
-http.interceptors.request.use((config) => {
-  config.headers.set('X-Owner-Id', getOwnerId())
-  return config
-})
 
 interface ProblemDetails {
   title?: string

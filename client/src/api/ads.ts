@@ -3,11 +3,16 @@ import { http } from './http'
 
 export const PAGE_SIZE = 20
 
+export interface QueryContext {
+  location: LatLng | null // for the distance filter
+  myName: string // for "My ads"
+}
+
 /**
  * Turns the filters bar into API query parameters. Empty filters are left out; the distance is
- * sent only once the user's location is known.
+ * sent only once the user's location is known, and "My ads" only once their name is.
  */
-export function toQueryParams(filters: Filters, location: LatLng | null, page?: number): Record<string, string> {
+export function toQueryParams(filters: Filters, { location, myName }: QueryContext, page?: number): Record<string, string> {
   const params: Record<string, string> = {}
   const search = filters.search.trim()
   if (search) params.search = search
@@ -18,7 +23,8 @@ export function toQueryParams(filters: Filters, location: LatLng | null, page?: 
   if (min !== null) params.minPrice = String(min)
   if (max !== null) params.maxPrice = String(max)
 
-  if (filters.mineOnly) params.mineOnly = 'true'
+  const name = myName.trim()
+  if (filters.mineOnly && name) params.contactName = name
 
   if (filters.radiusKm !== null && location) {
     params.lat = location.lat.toFixed(6)

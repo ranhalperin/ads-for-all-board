@@ -13,10 +13,10 @@ public interface IAdRepository
 
     /// <summary>
     /// Replaces an ad with what <paramref name="update"/> returns. <paramref name="update"/> runs inside the
-    /// lock on fresh data, so a check it makes (such as ownership) can't be raced. Throws NotFound if missing.
+    /// lock on fresh data, so it always sees the latest version. Throws NotFound if missing.
     /// </summary>
     Task<Ad> UpdateAsync(Guid id, Func<Ad, Ad> update, CancellationToken ct);
 
-    /// <summary>Removes an ad. <paramref name="check"/> runs inside the lock first and may throw to refuse.</summary>
-    Task DeleteAsync(Guid id, Action<Ad> check, CancellationToken ct);
+    /// <summary>Removes an ad. Throws NotFound if missing.</summary>
+    Task DeleteAsync(Guid id, CancellationToken ct);
 }

@@ -21,8 +21,9 @@ public sealed class AdQuery : IValidatableObject
     [Range(0, double.MaxValue)]
     public decimal? MaxPrice { get; init; }
 
-    /// <summary>Only the caller's own ads (needs the X-Owner-Id header).</summary>
-    public bool MineOnly { get; init; }
+    /// <summary>Only ads with this contact name (whole name, case-insensitive). "My ads" sends the name the user posts under.</summary>
+    [StringLength(60)]
+    public string? ContactName { get; init; }
 
     /// <summary>Distance filter: the caller's location and a radius in km.</summary>
     [Range(-90, 90)] public double? Lat { get; init; }

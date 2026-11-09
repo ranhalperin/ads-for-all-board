@@ -44,7 +44,6 @@ for (var i = 0; i < count; i++)
         Latitude = Math.Round(city.Lat + (random.NextDouble() - 0.5) * 0.27, 5),
         Longitude = Math.Round(city.Lng + (random.NextDouble() - 0.5) * 0.32, 5),
         Address = city.Name,
-        OwnerId = $"gen-owner-{random.Next(0, 5000):D4}",
         CreatedAt = now.AddMinutes(-random.Next(0, 60 * 24 * 90)),
     });
 }

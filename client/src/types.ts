@@ -13,7 +13,7 @@ export interface Bounds {
   west: number
 }
 
-/** An ad as the API returns it. The owner ID is never sent; `isMine` says whether it's yours. */
+/** An ad as the API returns it. */
 export interface Ad {
   id: string
   title: string
@@ -28,7 +28,6 @@ export interface Ad {
   address?: string | null
   createdAt: string
   updatedAt?: string | null
-  isMine: boolean
   distanceKm?: number | null
 }
 

@@ -30,7 +30,7 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(allowedOrigins)
     .AllowAnyMethod()
-    .WithHeaders("Content-Type", "X-Owner-Id")
+    .WithHeaders("Content-Type")
     .WithExposedHeaders("Location", "Retry-After")));
 
 builder.Services.AddEndpointsApiExplorer();
