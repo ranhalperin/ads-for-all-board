@@ -21,7 +21,7 @@ public sealed class JsonFileAdRepository(
     StorageOptions options,
     ILogger<JsonFileAdRepository> logger) : IAdRepository
 {
-    private const string LockName = "ads";
+    private const string LockKeyName = "ads";
 
     private readonly SemaphoreSlim _localLock = new(1, 1);
     private volatile JsonFileSnapshot _snapshot = JsonFileSnapshot.NotLoaded;
@@ -141,7 +141,7 @@ public sealed class JsonFileAdRepository(
         try
         {
             var left = options.LockTimeout - waited.Elapsed;
-            await using var _ = await sharedLock.AcquireAsync(LockName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct);
+            await using var _ = await sharedLock.AcquireAsync(LockKeyName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct);
             return await action();
         }
         finally

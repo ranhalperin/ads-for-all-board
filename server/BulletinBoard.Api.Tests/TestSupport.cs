@@ -22,7 +22,7 @@ public sealed class TempStore : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(Folder.Path, recursive: true); } catch (IOException) { }
+        try { Directory.Delete(Folder.GetPath, recursive: true); } catch (IOException) { }
     }
 }
 

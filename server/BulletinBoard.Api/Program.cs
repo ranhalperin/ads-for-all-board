@@ -49,7 +49,7 @@ app.UseCors();
 app.MapControllers();
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" })).ExcludeFromDescription();
 
-app.Logger.LogInformation("Ads folder: {Folder}", folder.Path);
+app.Logger.LogInformation("Ads folder: {Folder}", folder.GetPath);
 app.Run();
 
 /// <summary>Visible to the integration tests (WebApplicationFactory).</summary>

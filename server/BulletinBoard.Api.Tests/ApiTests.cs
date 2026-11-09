@@ -17,7 +17,7 @@ public class ApiTests : IDisposable
     public ApiTests()
     {
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b => b
-            .UseSetting("Storage:FolderPath", _store.Folder.Path)
+            .UseSetting("Storage:FolderPath", _store.Folder.GetPath)
             .UseSetting("Storage:SeedFile", "no-seed.json"));
     }
 

@@ -39,7 +39,7 @@ public class StorageTests : IDisposable
         await server.DeleteAsync(ad.Id, default);
 
         Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
-        Assert.Empty(Directory.GetFiles(_store.Folder.Path, "*.tmp"));
+        Assert.Empty(Directory.GetFiles(_store.Folder.GetPath, "*.tmp"));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class StorageTests : IDisposable
     {
         var lockA = new SharedFileLock(_store.Folder, 2, 10);
         var lockB = new SharedFileLock(_store.Folder, 2, 10);
-        Directory.CreateDirectory(_store.Folder.Path);
+        Directory.CreateDirectory(_store.Folder.GetPath);
 
         var held = await lockA.AcquireAsync("ads", TimeSpan.FromSeconds(1), default);
         await Assert.ThrowsAsync<StorageBusyException>(() =>

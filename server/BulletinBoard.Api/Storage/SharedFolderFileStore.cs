@@ -77,7 +77,7 @@ public sealed class SharedFolderFileStore : IFileStore
 
     private void EnsureFiles(string? seedFile)
     {
-        Directory.CreateDirectory(_folder.Path);
+        Directory.CreateDirectory(_folder.GetPath);
         if (!File.Exists(_folder.GetAdsFile()))
         {
             try
