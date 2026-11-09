@@ -39,13 +39,11 @@ public sealed class JsonFileAdRepository(
             return true;
         }, ct);
 
-    public Task<Ad> UpdateAsync(Guid id, Func<Ad, Ad> update, CancellationToken ct) =>
+    public Task UpdateAsync(Ad ad, CancellationToken ct) =>
         UpdateJsonFileAsync(ads =>
         {
-            var index = IndexOf(ads, id);
-            var updated = update(ads[index]);
-            ads[index] = updated;
-            return updated;
+            ads[IndexOf(ads, ad.Id)] = ad;
+            return true;
         }, ct);
 
     public Task DeleteAsync(Guid id, CancellationToken ct) =>

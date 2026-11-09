@@ -55,8 +55,9 @@ public sealed class AdService(IAdRepository repository, StorageOptions options, 
 
     public async Task<AdResponse> UpdateAsync(Guid id, AdUpsertRequest request, CancellationToken ct)
     {
-        var updated = await repository.UpdateAsync(id, existing =>
-            Apply(existing, request) with { UpdatedAt = clock.GetUtcNow().UtcDateTime }, ct);
+        var existing = await repository.GetByIdAsync(id, ct) ?? throw new NotFoundException("Ad not found.");
+        var updated = Apply(existing, request) with { UpdatedAt = clock.GetUtcNow().UtcDateTime };
+        await repository.UpdateAsync(updated, ct);
         return AdResponse.From(updated);
     }
 

@@ -11,11 +11,8 @@ public interface IAdRepository
 
     Task AddAsync(Ad ad, CancellationToken ct);
 
-    /// <summary>
-    /// Replaces an ad with what <paramref name="update"/> returns. <paramref name="update"/> runs inside the
-    /// lock on fresh data, so it always sees the latest version. Throws NotFound if missing.
-    /// </summary>
-    Task<Ad> UpdateAsync(Guid id, Func<Ad, Ad> update, CancellationToken ct);
+    /// <summary>Saves <paramref name="ad"/> in place of the stored ad with the same id. Throws NotFound if it no longer exists.</summary>
+    Task UpdateAsync(Ad ad, CancellationToken ct);
 
     /// <summary>Removes an ad. Throws NotFound if missing.</summary>
     Task DeleteAsync(Guid id, CancellationToken ct);

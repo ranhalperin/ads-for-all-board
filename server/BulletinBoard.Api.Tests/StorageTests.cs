@@ -35,7 +35,7 @@ public class StorageTests : IDisposable
         var server = _store.NewServer();
         var ad = Ads.Make();
         await server.AddAsync(ad, default);
-        await server.UpdateAsync(ad.Id, a => a with { Title = "Changed" }, default);
+        await server.UpdateAsync(ad with { Title = "Changed" }, default);
         await server.DeleteAsync(ad.Id, default);
 
         Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.VersionFile));
@@ -98,8 +98,8 @@ public class StorageTests : IDisposable
         var ad = Ads.Make();
         await server.AddAsync(ad, default);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            server.UpdateAsync(ad.Id, _ => throw new InvalidOperationException("no"), default));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            server.UpdateAsync(Ads.Make(), default)); // an id that isn't stored
         await Assert.ThrowsAsync<NotFoundException>(() =>
             server.DeleteAsync(Guid.NewGuid(), default));
 
