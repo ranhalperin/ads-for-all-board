@@ -80,7 +80,7 @@ public sealed class JsonFileAdRepository(
                 var ads = await store.ReadAdsAsync(ct);
                 logger.LogInformation("Loaded {Count} ads (version {Version}) in {Ms} ms",
                     ads.Count, version, started.ElapsedMilliseconds);
-                return _snapshot = Snapshot.Create(version, ads);
+                return _snapshot = new Snapshot(version, ads);
             }, ct);
         }
         catch (StorageBusyException) when (current.IsLoaded)
@@ -107,7 +107,7 @@ public sealed class JsonFileAdRepository(
             var next = version + 1;
             await store.WriteAdsAsync(ads, CancellationToken.None);
             await store.WriteVersionAsync(next, CancellationToken.None);
-            _snapshot = Snapshot.Create(next, ads);
+            _snapshot = new Snapshot(next, ads);
             return result;
         }, ct);
 
@@ -133,16 +133,5 @@ public sealed class JsonFileAdRepository(
     {
         var index = ads.FindIndex(a => a.Id == id);
         return index >= 0 ? index : throw new NotFoundException("Ad not found.");
-    }
-
-    /// <summary>An immutable view of the file at one version. Swapped in one step, so readers never see a half-change.</summary>
-    private sealed record Snapshot(long Version, IReadOnlyList<Ad> Ads, IReadOnlyDictionary<Guid, Ad> ById)
-    {
-        public static readonly Snapshot NotLoaded = new(-1, [], new Dictionary<Guid, Ad>());
-
-        public bool IsLoaded => Version >= 0;
-
-        public static Snapshot Create(long version, List<Ad> ads) =>
-            new(version, ads.AsReadOnly(), ads.ToDictionary(a => a.Id));
     }
 }
