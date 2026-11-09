@@ -33,16 +33,14 @@ public sealed class JsonFileAdRepository(
         (await GetSnapshotAsync(ct)).ById.GetValueOrDefault(id);
 
     public Task AddAsync(Ad ad, CancellationToken ct) =>
-        MutateAsync(ads =>
+        UpdateJsonFileAsync(ads =>
         {
-            if (ads.Count >= options.MaxAds)
-                throw new StorageFullException($"The board is full ({options.MaxAds:N0} ads).");
             ads.Add(ad);
             return true;
         }, ct);
 
     public Task<Ad> UpdateAsync(Guid id, Func<Ad, Ad> update, CancellationToken ct) =>
-        MutateAsync(ads =>
+        UpdateJsonFileAsync(ads =>
         {
             var index = IndexOf(ads, id);
             var updated = update(ads[index]);
@@ -51,7 +49,7 @@ public sealed class JsonFileAdRepository(
         }, ct);
 
     public Task DeleteAsync(Guid id, CancellationToken ct) =>
-        MutateAsync(ads =>
+        UpdateJsonFileAsync(ads =>
         {
             var index = IndexOf(ads, id);
             ads.RemoveAt(index);
@@ -70,18 +68,7 @@ public sealed class JsonFileAdRepository(
 
         try
         {
-            return await ExclusiveAsync(async () =>
-            {
-                // Another request on this server may have reloaded while we waited for the lock.
-                var version = await store.ReadVersionAsync(ct) ?? 0;
-                if (_snapshot.IsLoaded && _snapshot.Version == version) return _snapshot;
-
-                var started = Stopwatch.StartNew();
-                var ads = await store.ReadAdsAsync(ct);
-                logger.LogInformation("Loaded {Count} ads (version {Version}) in {Ms} ms",
-                    ads.Count, version, started.ElapsedMilliseconds);
-                return _snapshot = new Snapshot(version, ads);
-            }, ct);
+            return await AtomicServersIOAction(() => ReloadAsync(ct), ct);
         }
         catch (StorageBusyException) when (current.IsLoaded)
         {
@@ -91,28 +78,46 @@ public sealed class JsonFileAdRepository(
         }
     }
 
-    private Task<T> MutateAsync<T>(Func<List<Ad>, T> change, CancellationToken ct) =>
-        ExclusiveAsync(async () =>
-        {
-            var version = await store.ReadVersionAsync(ct) ?? 0;
+    /// <summary>Reads ads.json into a new snapshot. Call only while holding both locks.</summary>
+    private async Task<Snapshot> ReloadAsync(CancellationToken ct)
+    {
+        // Another request on this server may have reloaded while we waited for the lock.
+        var version = await store.ReadVersionAsync(ct) ?? 0;
+        if (_snapshot.IsLoaded && _snapshot.Version == version) return _snapshot;
 
-            // Our snapshot is current only if no other server has written since we loaded it.
-            var ads = _snapshot.IsLoaded && _snapshot.Version == version
-                ? new List<Ad>(_snapshot.Ads)
-                : await store.ReadAdsAsync(ct);
+        var started = Stopwatch.StartNew();
+        var ads = await store.ReadAdsAsync(ct);
+        logger.LogInformation("Loaded {Count} ads (version {Version}) in {Ms} ms",
+            ads.Count, version, started.ElapsedMilliseconds);
+        return _snapshot = new Snapshot(version, ads);
+    }
 
-            var result = change(ads); // may throw (not found, full): nothing has been written yet
+    /// <summary>Takes both locks, then applies <paramref name="change"/> to the latest ads and saves them.</summary>
+    private Task<T> UpdateJsonFileAsync<T>(Func<List<Ad>, T> change, CancellationToken ct) =>
+        AtomicServersIOAction(() => ApplyAndSaveAsync(change, ct), ct);
 
-            // From here on, finish the write even if the caller goes away, so the file and version agree.
-            var next = version + 1;
-            await store.WriteAdsAsync(ads, CancellationToken.None);
-            await store.WriteVersionAsync(next, CancellationToken.None);
-            _snapshot = new Snapshot(next, ads);
-            return result;
-        }, ct);
+    /// <summary>Read the latest ads → change them → save ads.json and ads.version. Call only while holding both locks.</summary>
+    private async Task<T> ApplyAndSaveAsync<T>(Func<List<Ad>, T> change, CancellationToken ct)
+    {
+        var version = await store.ReadVersionAsync(ct) ?? 0;
+
+        // Our snapshot is current only if no other server has written since we loaded it.
+        var ads = _snapshot.IsLoaded && _snapshot.Version == version
+            ? new List<Ad>(_snapshot.Ads)
+            : await store.ReadAdsAsync(ct);
+
+        var result = change(ads); // may throw (not found): nothing has been written yet
+
+        // From here on, finish the write even if the caller goes away, so the file and version agree.
+        var next = version + 1;
+        await store.WriteAdsAsync(ads, CancellationToken.None);
+        await store.WriteVersionAsync(next, CancellationToken.None);
+        _snapshot = new Snapshot(next, ads);
+        return result;
+    }
 
     /// <summary>Runs <paramref name="action"/> holding both locks, giving up after Storage:LockTimeoutSeconds.</summary>
-    private async Task<T> ExclusiveAsync<T>(Func<Task<T>> action, CancellationToken ct)
+    private async Task<T> AtomicServersIOAction<T>(Func<Task<T>> action, CancellationToken ct)
     {
         var waited = Stopwatch.StartNew();
         if (!await _localLock.WaitAsync(options.LockTimeout, ct))

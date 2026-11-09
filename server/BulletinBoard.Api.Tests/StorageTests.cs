@@ -92,18 +92,6 @@ public class StorageTests : IDisposable
     }
 
     [Fact]
-    public async Task Board_refuses_ads_above_the_limit()
-    {
-        _store.Options.MaxAds = 2;
-        var server = _store.NewServer();
-        await server.AddAsync(Ads.Make(), default);
-        await server.AddAsync(Ads.Make(), default);
-
-        await Assert.ThrowsAsync<StorageFullException>(() => server.AddAsync(Ads.Make(), default));
-        Assert.Equal(2, (await server.GetAllAsync(default)).Count);
-    }
-
-    [Fact]
     public async Task Refused_change_writes_nothing()
     {
         var server = _store.NewServer();

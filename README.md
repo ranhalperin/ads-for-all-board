@@ -30,7 +30,7 @@ The first run creates `server/BulletinBoard.Api/data/` from `SeedData/ads.json` 
 ### Tests
 
 ```bash
-dotnet test                       # API: 31 tests (filters, file store, two-server locking, HTTP)
+dotnet test                       # API: 30 tests (filters, file store, two-server locking, HTTP)
 cd client && npm test             # client: query building, validation, address labels
 cd client && npm run typecheck
 ```
@@ -81,7 +81,7 @@ Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API
 | `PUT /api/ads/{id}` | Edit an ad |
 | `DELETE /api/ads/{id}` | Delete an ad (204) |
 
-Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 409 when the board is full, 503 + `Retry-After` when the file is busy. A 500 never exposes internals.
+Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 + `Retry-After` when the file is busy. A 500 never exposes internals.
 
 | Class | Role |
 |---|---|
@@ -113,7 +113,7 @@ The store is designed for **several API instances sharing one folder**: a local 
 
 ## Size limits
 
-Sized for **up to 100,000 ads** (`Storage:MaxAds`; above it, creating returns 409).
+Sized for **up to about 100,000 ads**. There is no hard limit: past that, every write and every reload just gets slower (see below).
 
 Measured on a laptop with 100,000 generated ads (47.8 MB file):
 
@@ -138,6 +138,5 @@ The limit comes from the single file: every write rewrites it and every other se
 | `Storage:FolderPath` | `data` | Where the three files live (the shared mount in the cloud) |
 | `Storage:SeedFile` | `SeedData/ads.json` | Copied in when the folder is empty |
 | `Storage:LockTimeoutSeconds` | `15` | Wait for the lock before 503 |
-| `Storage:MaxAds` | `100000` | |
 | `Storage:MaxPins` | `2000` | Most pins per map request |
 | `Cors:Origins` | `http://localhost:5273` | Only needed when the client is hosted on another origin |

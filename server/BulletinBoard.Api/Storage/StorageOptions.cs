@@ -19,9 +19,6 @@ public class StorageOptions
     public int LockRetryMinMs { get; set; } = 25;
     public int LockRetryMaxMs { get; set; } = 100;
 
-    /// <summary>Creating an ad above this count is refused (the single-file design is sized for 100K).</summary>
-    public int MaxAds { get; set; } = 100_000;
-
     /// <summary>Most pins the map endpoint returns in one response.</summary>
     public int MaxPins { get; set; } = 2_000;
 

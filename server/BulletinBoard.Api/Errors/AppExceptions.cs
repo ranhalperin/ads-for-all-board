@@ -11,12 +11,6 @@ public sealed class NotFoundException(string message) : AppException(message)
     public override int StatusCode => StatusCodes.Status404NotFound;
 }
 
-/// <summary>The board reached Storage:MaxAds.</summary>
-public sealed class StorageFullException(string message) : AppException(message)
-{
-    public override int StatusCode => StatusCodes.Status409Conflict;
-}
-
 /// <summary>The file lock wasn't free within the timeout. The client should try again.</summary>
 public sealed class StorageBusyException() : AppException("The board is busy right now. Try again in a moment.")
 {
