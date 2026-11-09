@@ -24,7 +24,7 @@ public sealed class JsonFileAdRepository(
     private const string LockName = "ads";
 
     private readonly SemaphoreSlim _localLock = new(1, 1);
-    private volatile Snapshot _snapshot = Snapshot.NotLoaded;
+    private volatile JsonFileSnapshot _snapshot = JsonFileSnapshot.NotLoaded;
 
     public async Task<IReadOnlyList<Ad>> GetAllAsync(CancellationToken ct) =>
         (await GetSnapshotFileAsync(ct)).Ads;
@@ -55,7 +55,7 @@ public sealed class JsonFileAdRepository(
         }, ct);
 
     /// <summary>The current snapshot, reloading it first if another server has written since.</summary>
-    private async Task<Snapshot> GetSnapshotFileAsync(CancellationToken ct)
+    private async Task<JsonFileSnapshot> GetSnapshotFileAsync(CancellationToken ct)
     {
         var current = _snapshot;
         var fileVersion = await store.ReadVersionAsync(ct);
@@ -77,7 +77,7 @@ public sealed class JsonFileAdRepository(
     }
 
     /// <summary>Reads ads.json into a new snapshot. Call only while holding both locks.</summary>
-    private async Task<Snapshot> ReloadAsync(CancellationToken ct)
+    private async Task<JsonFileSnapshot> ReloadAsync(CancellationToken ct)
     {
         // Another request on this server may have reloaded while we waited for the lock.
         var version = await store.ReadVersionAsync(ct) ?? 0;
@@ -87,7 +87,8 @@ public sealed class JsonFileAdRepository(
         var ads = await store.ReadAdsAsync(ct);
         logger.LogInformation("Loaded {Count} ads (version {Version}) in {Ms} ms",
             ads.Count, version, started.ElapsedMilliseconds);
-        return _snapshot = new Snapshot(version, ads);
+        _snapshot = new JsonFileSnapshot(version, ads);
+        return _snapshot;
     }
 
     /// <summary>Takes both locks, then applies <paramref name="change"/> to the latest ads and saves them.</summary>
@@ -110,7 +111,7 @@ public sealed class JsonFileAdRepository(
         var next = version + 1;
         await store.WriteAdsAsync(ads, CancellationToken.None);
         await store.WriteVersionAsync(next, CancellationToken.None);
-        _snapshot = new Snapshot(next, ads);
+        _snapshot = new JsonFileSnapshot(next, ads);
         return result;
     }
 

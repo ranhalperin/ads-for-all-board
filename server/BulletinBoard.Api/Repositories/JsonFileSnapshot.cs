@@ -7,12 +7,12 @@ namespace BulletinBoard.Api.Repositories;
 /// Immutable: a change builds a new snapshot and the repository swaps it in one step,
 /// so readers never see a half-applied change.
 /// </summary>
-internal class Snapshot
+internal class JsonFileSnapshot
 {
     /// <summary>Before the first load. Its version (-1) never matches the file's.</summary>
-    public static readonly Snapshot NotLoaded = new(-1, []);
+    public static readonly JsonFileSnapshot NotLoaded = new(-1, []);
 
-    public Snapshot(long version, List<Ad> ads)
+    public JsonFileSnapshot(long version, List<Ad> ads)
     {
         Version = version;
         Ads = ads.AsReadOnly();
