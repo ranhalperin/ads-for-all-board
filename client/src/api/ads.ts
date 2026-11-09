@@ -3,17 +3,11 @@ import { http } from './http'
 
 export const PAGE_SIZE = 20
 
-/** Extra context the filters depend on: the user's location (near me) and the visible map area. */
-export interface QueryContext {
-  location: LatLng | null
-  bounds: Bounds | null
-}
-
 /**
- * Turns the filters bar into API query parameters. Empty filters are left out; "near me" and
- * "distance" sort are sent only when the location is known.
+ * Turns the filters bar into API query parameters. Empty filters are left out; the distance is
+ * sent only once the user's location is known.
  */
-export function toQueryParams(filters: Filters, ctx: QueryContext, page?: number): Record<string, string> {
+export function toQueryParams(filters: Filters, location: LatLng | null, page?: number): Record<string, string> {
   const params: Record<string, string> = {}
   const search = filters.search.trim()
   if (search) params.search = search
@@ -26,16 +20,12 @@ export function toQueryParams(filters: Filters, ctx: QueryContext, page?: number
 
   if (filters.mineOnly) params.mineOnly = 'true'
 
-  const near = filters.nearMe && ctx.location
-  if (near) {
-    params.lat = ctx.location!.lat.toFixed(6)
-    params.lng = ctx.location!.lng.toFixed(6)
+  if (filters.radiusKm !== null && location) {
+    params.lat = location.lat.toFixed(6)
+    params.lng = location.lng.toFixed(6)
     params.radiusKm = String(filters.radiusKm)
   }
 
-  if (filters.onlyMapArea && ctx.bounds) Object.assign(params, boundsParams(ctx.bounds))
-
-  params.sort = filters.sort === 'Distance' && !near ? 'Newest' : filters.sort
   if (page !== undefined) {
     params.page = String(page)
     params.pageSize = String(PAGE_SIZE)

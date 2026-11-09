@@ -1,4 +1,4 @@
-import type { AdSort, Category } from './types'
+import type { Category } from './types'
 
 /** Every user-visible string, in one place. Adding a language means adding a second object like this one. */
 export const t = {
@@ -9,12 +9,12 @@ export const t = {
   allCategories: 'All categories',
   minPrice: 'Min ₪',
   maxPrice: 'Max ₪',
-  nearMe: 'Near me',
+  distance: 'Distance',
+  anyDistance: 'Any distance',
+  locating: 'Finding you…',
   withinKm: (km: number) => `Within ${km} km`,
-  onlyMapArea: 'Only map area',
   myAds: 'My ads',
   clearFilters: 'Clear',
-  sortLabel: 'Sort',
 
   results: (n: number) => `${n.toLocaleString()} ${n === 1 ? 'ad' : 'ads'}`,
   loading: 'Loading…',
@@ -96,11 +96,4 @@ export const categoryLabel: Record<Category, string> = {
   Jobs: 'Jobs',
   Services: 'Services',
   Other: 'Other',
-}
-
-export const sortLabel: Record<AdSort, string> = {
-  Newest: 'Newest',
-  PriceAsc: 'Price: low to high',
-  PriceDesc: 'Price: high to low',
-  Distance: 'Distance',
 }

@@ -1,18 +1,17 @@
-import { categoryLabel, sortLabel, t } from '../strings'
-import { CATEGORIES, SORTS, type Filters } from '../types'
+import { categoryLabel, t } from '../strings'
+import { CATEGORIES, DISTANCES_KM, type Filters } from '../types'
 
 interface Props {
   filters: Filters
   locating: boolean
   locationError: string | null
   onChange: (patch: Partial<Filters>) => void
-  onToggleNearMe: () => void
+  onDistance: (km: number | null) => void
   onClear: () => void
 }
 
-const RADII = [1, 5, 10, 25, 50, 100]
-
-export function FiltersBar({ filters, locating, locationError, onChange, onToggleNearMe, onClear }: Props) {
+/** Search by title, then: my ads, category, price from–to, distance. */
+export function FiltersBar({ filters, locating, locationError, onChange, onDistance, onClear }: Props) {
   return (
     <section className="filters" aria-label="Filters">
       <input
@@ -26,6 +25,11 @@ export function FiltersBar({ filters, locating, locationError, onChange, onToggl
       />
 
       <div className="filter-row">
+        <label className="check">
+          <input type="checkbox" checked={filters.mineOnly} onChange={(e) => onChange({ mineOnly: e.target.checked })} />
+          {t.myAds}
+        </label>
+
         <select
           aria-label={t.allCategories}
           value={filters.category}
@@ -61,49 +65,17 @@ export function FiltersBar({ filters, locating, locationError, onChange, onToggl
           />
         </div>
 
-        <div className="near-me">
-          <button
-            type="button"
-            className={filters.nearMe ? 'chip on' : 'chip'}
-            aria-pressed={filters.nearMe}
-            disabled={locating}
-            onClick={onToggleNearMe}
-          >
-            ◎ {locating ? t.loading : t.nearMe}
-          </button>
-          {filters.nearMe && (
-            <select
-              aria-label={t.withinKm(filters.radiusKm)}
-              value={filters.radiusKm}
-              onChange={(e) => onChange({ radiusKm: Number(e.target.value) })}
-            >
-              {RADII.map((km) => (
-                <option key={km} value={km}>
-                  {t.withinKm(km)}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        <label className="check">
-          <input type="checkbox" checked={filters.onlyMapArea} onChange={(e) => onChange({ onlyMapArea: e.target.checked })} />
-          {t.onlyMapArea}
-        </label>
-
-        <label className="check">
-          <input type="checkbox" checked={filters.mineOnly} onChange={(e) => onChange({ mineOnly: e.target.checked })} />
-          {t.myAds}
-        </label>
-
         <select
-          aria-label={t.sortLabel}
-          value={filters.sort}
-          onChange={(e) => onChange({ sort: e.target.value as Filters['sort'] })}
+          aria-label={t.distance}
+          className={filters.radiusKm !== null ? 'on' : undefined}
+          value={filters.radiusKm ?? ''}
+          disabled={locating}
+          onChange={(e) => onDistance(e.target.value === '' ? null : Number(e.target.value))}
         >
-          {SORTS.filter((s) => s !== 'Distance' || filters.nearMe).map((s) => (
-            <option key={s} value={s}>
-              {sortLabel[s]}
+          <option value="">{locating ? t.locating : t.anyDistance}</option>
+          {DISTANCES_KM.map((km) => (
+            <option key={km} value={km}>
+              {t.withinKm(km)}
             </option>
           ))}
         </select>

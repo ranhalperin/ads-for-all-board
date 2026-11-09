@@ -2,9 +2,9 @@
 
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 
-- Browse every ad, **search by title**, and filter by **category**, **price range**, **my ads**, **location** (near me, within a radius) and **the visible map area**. Sort by newest, price or distance.
+- Browse every ad, newest first. **Search by title**, and filter by **my ads**, **category**, **price from–to** and **distance** (within 1–100 km of your location).
 - **Create, edit and delete** your own ads. Other people's ads are read-only.
-- **Bonus:** every ad has a map location, set by address search, "use my location", clicking the map or dragging the pin. The board shows every ad on a map and can filter to the ads near you.
+- **Bonus:** every ad has a map location, set by address search, "use my location", clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
 
 ![screen](docs/screen.jpg)
 
@@ -61,7 +61,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | Part | What it does |
 |---|---|
 | `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
-| `components/FiltersBar` | Title search (debounced), category, price range, near me + radius, only map area, my ads, sort |
+| `components/FiltersBar` | Title search (debounced), my ads, category, price from–to, distance (asks for your location the first time) |
 | `components/AdsList` | One page of results, with edit and delete on your own ads |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
@@ -74,8 +74,8 @@ Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API
 
 | Endpoint | |
 |---|---|
-| `GET /api/ads?search=&category=&minPrice=&maxPrice=&mineOnly=&lat=&lng=&radiusKm=&north=&south=&east=&west=&sort=&page=&pageSize=` | Search: one page plus the total |
-| `GET /api/ads/pins?<same filters>` | Light pins for the map (id, title, category, lat, lng), capped at 2,000 |
+| `GET /api/ads?search=&mineOnly=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
+| `GET /api/ads/pins?<same filters>&north=&south=&east=&west=` | Light pins for the map area in view (id, title, category, lat, lng), capped at 2,000 |
 | `GET /api/ads/{id}` | One ad |
 | `POST /api/ads` | Create (201 + Location) |
 | `PUT /api/ads/{id}` | Edit your own ad (403 otherwise) |
@@ -86,7 +86,7 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 403, 404, 
 | Class | Role |
 |---|---|
 | `AdsController` | HTTP only: reads the `X-Owner-Id` header, calls the service |
-| `AdService` / `AdFilter` | Search (filters, distance, sort, paging), ownership checks, sets id / owner / dates |
+| `AdService` / `AdFilter` | Search (filters, distance, newest first, paging), ownership checks, sets id / owner / dates |
 | `JsonFileAdRepository` | The in-memory snapshot and the write procedure below |
 | `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
@@ -120,7 +120,7 @@ Measured on a laptop with 100,000 generated ads (47.8 MB file):
 | Operation | Time |
 |---|---|
 | Reload after another writer (whole file) | ~0.8–1.2 s, once per change |
-| Search / filters / near me / sort (one page) | 20–100 ms |
+| Search / filters / distance (one page) | 20–100 ms |
 | Map pins for an area | ~35 ms |
 | Create / edit / delete (rewrites the whole file under the lock) | ~0.5 s |
 | 5 creates at once | queued: 0.4 s → 2.0 s, all saved |

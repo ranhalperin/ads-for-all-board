@@ -12,7 +12,7 @@ public sealed class AdService(IAdRepository repository, StorageOptions options, 
     public async Task<PagedResult<AdResponse>> SearchAsync(AdQuery query, string? ownerId, CancellationToken ct)
     {
         var matches = AdFilter.Apply(await repository.GetAllAsync(ct), query, ownerId);
-        var page = AdFilter.Sort(matches, query.Sort)
+        var page = AdFilter.NewestFirst(matches)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .Select(m => AdResponse.From(m.Ad, ownerId, m.DistanceKm))
@@ -26,7 +26,7 @@ public sealed class AdService(IAdRepository repository, StorageOptions options, 
         var truncated = matches.Count > options.MaxPins;
         // Sorting costs time, so only when we must choose which pins to leave out (newest win).
         IEnumerable<AdFilter.Match> chosen = truncated
-            ? AdFilter.Sort(matches, AdSort.Newest).Take(options.MaxPins)
+            ? AdFilter.NewestFirst(matches).Take(options.MaxPins)
             : matches;
         var pins = chosen
             .Select(m => new AdPin(m.Ad.Id, m.Ad.Title, m.Ad.Category, m.Ad.Latitude, m.Ad.Longitude))

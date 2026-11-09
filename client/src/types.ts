@@ -1,9 +1,6 @@
 export const CATEGORIES = ['ForSale', 'Wanted', 'RealEstate', 'Vehicles', 'Jobs', 'Services', 'Other'] as const
 export type Category = (typeof CATEGORIES)[number]
 
-export const SORTS = ['Newest', 'PriceAsc', 'PriceDesc', 'Distance'] as const
-export type AdSort = (typeof SORTS)[number]
-
 export interface LatLng {
   lat: number
   lng: number
@@ -70,30 +67,27 @@ export interface AdRequest {
   address: string | null
 }
 
-/** What the filters bar holds. Text inputs stay strings until the query is built. */
+/** What the filters bar holds. Text inputs stay strings until the query is built. Results are always newest first. */
 export interface Filters {
   search: string
+  mineOnly: boolean
   category: Category | ''
   minPrice: string
   maxPrice: string
-  mineOnly: boolean
-  nearMe: boolean
-  radiusKm: number
-  onlyMapArea: boolean
-  sort: AdSort
+  /** Distance from the user's location; null = any distance. */
+  radiusKm: number | null
 }
 
 export const DEFAULT_FILTERS: Filters = {
   search: '',
+  mineOnly: false,
   category: '',
   minPrice: '',
   maxPrice: '',
-  mineOnly: false,
-  nearMe: false,
-  radiusKm: 10,
-  onlyMapArea: false,
-  sort: 'Newest',
+  radiusKm: null,
 }
+
+export const DISTANCES_KM = [1, 5, 10, 25, 50, 100] as const
 
 export type PanelState =
   | { mode: 'closed' }

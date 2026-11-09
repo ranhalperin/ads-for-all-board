@@ -106,7 +106,7 @@ public class ApiTests : IDisposable
     [Theory]
     [InlineData("/api/ads?radiusKm=5")]
     [InlineData("/api/ads?minPrice=10&maxPrice=5")]
-    [InlineData("/api/ads?sort=distance")]
+    [InlineData("/api/ads?lat=32.08")]
     [InlineData("/api/ads?north=32")]
     [InlineData("/api/ads?pageSize=500")]
     public async Task Invalid_query_returns_400(string url) =>

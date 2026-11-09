@@ -49,14 +49,22 @@ public class AdServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Near_me_keeps_ads_inside_the_radius_and_reports_distance()
+    public async Task Distance_filter_keeps_ads_inside_the_radius_newest_first_with_distance()
     {
         await SeedAsync();
-        var result = await Search(new AdQuery { Lat = TlvLat, Lng = TlvLng, RadiusKm = 10, Sort = AdSort.Distance });
+        var result = await Search(new AdQuery { Lat = TlvLat, Lng = TlvLng, RadiusKm = 10 });
 
-        Assert.Equal(["City bike", "Waiter wanted", "Mountain BIKE"], result.Items.Select(a => a.Title));
-        Assert.Equal(0, result.Items[0].DistanceKm);
+        Assert.Equal(["Waiter wanted", "Mountain BIKE", "City bike"], result.Items.Select(a => a.Title));
+        Assert.Equal(0, result.Items.Single(a => a.Title == "City bike").DistanceKm);
         Assert.All(result.Items, a => Assert.InRange(a.DistanceKm!.Value, 0, 10));
+    }
+
+    [Fact]
+    public async Task Results_are_always_newest_first()
+    {
+        await SeedAsync();
+        var result = await Search(new AdQuery());
+        Assert.Equal(["Waiter wanted", "Sofa", "Mountain BIKE", "City bike"], result.Items.Select(a => a.Title));
     }
 
     [Fact]
@@ -77,17 +85,6 @@ public class AdServiceTests : IDisposable
 
         var asStranger = await Search(new AdQuery(), owner: null);
         Assert.All(asStranger.Items, a => Assert.False(a.IsMine));
-    }
-
-    [Fact]
-    public async Task Price_sort_puts_ads_without_a_price_last()
-    {
-        await SeedAsync();
-        var asc = await Search(new AdQuery { Sort = AdSort.PriceAsc });
-        Assert.Equal([450m, 1200m, null, null], asc.Items.Select(a => a.Price));
-
-        var desc = await Search(new AdQuery { Sort = AdSort.PriceDesc });
-        Assert.Equal([1200m, 450m, null, null], desc.Items.Select(a => a.Price));
     }
 
     [Fact]

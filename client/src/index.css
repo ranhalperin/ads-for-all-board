@@ -71,9 +71,7 @@ textarea { resize: vertical; }
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .price-range { display: flex; align-items: center; gap: 4px; }
 .price-range input { width: 90px; }
-.near-me { display: flex; gap: 6px; }
-.chip { border-radius: 999px; }
-.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+select.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .check { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
 .main {

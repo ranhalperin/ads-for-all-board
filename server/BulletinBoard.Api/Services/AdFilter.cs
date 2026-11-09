@@ -4,7 +4,7 @@ using BulletinBoard.Api.Models;
 
 namespace BulletinBoard.Api.Services;
 
-/// <summary>The search: every filter in <see cref="AdQuery"/> over the in-memory list, then sorting.</summary>
+/// <summary>The search: every filter in <see cref="AdQuery"/> over the in-memory list, then newest first.</summary>
 public static class AdFilter
 {
     public readonly record struct Match(Ad Ad, double? DistanceKm);
@@ -52,11 +52,7 @@ public static class AdFilter
         return withDistance.ToList();
     }
 
-    public static IEnumerable<Match> Sort(IEnumerable<Match> matches, AdSort sort) => sort switch
-    {
-        AdSort.PriceAsc => matches.OrderBy(m => m.Ad.Price is null).ThenBy(m => m.Ad.Price).ThenByDescending(m => m.Ad.CreatedAt),
-        AdSort.PriceDesc => matches.OrderBy(m => m.Ad.Price is null).ThenByDescending(m => m.Ad.Price).ThenByDescending(m => m.Ad.CreatedAt),
-        AdSort.Distance => matches.OrderBy(m => m.DistanceKm).ThenByDescending(m => m.Ad.CreatedAt),
-        _ => matches.OrderByDescending(m => m.Ad.CreatedAt).ThenBy(m => m.Ad.Id),
-    };
+    /// <summary>Newest first; the id breaks ties so paging is stable.</summary>
+    public static IEnumerable<Match> NewestFirst(IEnumerable<Match> matches) =>
+        matches.OrderByDescending(m => m.Ad.CreatedAt).ThenBy(m => m.Ad.Id);
 }

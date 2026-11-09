@@ -34,11 +34,11 @@ export default function App() {
   // Typing in the search box and moving the map settle before they hit the API.
   const debouncedFilters = useDebounced(filters, 300)
   const debouncedBounds = useDebounced(bounds, 400)
-  const ctx = useMemo(() => ({ location: myLocation, bounds: debouncedBounds }), [myLocation, debouncedBounds])
-  const listParams = useMemo(() => toQueryParams(debouncedFilters, ctx, page), [debouncedFilters, ctx, page])
+  const listParams = useMemo(() => toQueryParams(debouncedFilters, myLocation, page), [debouncedFilters, myLocation, page])
+  // The map gets the same filters, limited to the area in view.
   const pinParams = useMemo(
-    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, ctx), ...boundsParams(debouncedBounds) } : null),
-    [debouncedFilters, ctx, debouncedBounds],
+    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, myLocation), ...boundsParams(debouncedBounds) } : null),
+    [debouncedFilters, myLocation, debouncedBounds],
   )
 
   // The list: one page of matching ads.
@@ -74,18 +74,20 @@ export default function App() {
     setPage(1)
   }, [])
 
-  const toggleNearMe = async () => {
-    if (filters.nearMe) {
-      updateFilters({ nearMe: false, sort: filters.sort === 'Distance' ? 'Newest' : filters.sort })
+  /** Picking a distance needs the user's location; ask for it the first time. "Any" turns the filter off. */
+  const changeDistance = async (km: number | null) => {
+    setLocationError(null)
+    if (km === null || myLocation) {
+      updateFilters({ radiusKm: km })
+      if (km !== null && myLocation) setFocus(myLocation)
       return
     }
     setLocating(true)
-    setLocationError(null)
     try {
       const here = await getCurrentLocation()
       setMyLocation(here)
       setFocus(here)
-      updateFilters({ nearMe: true, sort: 'Distance' })
+      updateFilters({ radiusKm: km })
     } catch {
       setLocationError(t.errLocationDenied)
     } finally {
@@ -100,7 +102,7 @@ export default function App() {
   }
 
   const selectedId = panel.mode === 'view' ? panel.id : panel.mode === 'edit' ? panel.ad.id : null
-  const filtered = JSON.stringify({ ...filters, radiusKm: 0 }) !== JSON.stringify({ ...DEFAULT_FILTERS, radiusKm: 0 })
+  const filtered = JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS)
 
   return (
     <div className={panel.mode === 'closed' ? 'app' : 'app with-panel'}>
@@ -116,8 +118,8 @@ export default function App() {
         locating={locating}
         locationError={locationError}
         onChange={updateFilters}
-        onToggleNearMe={() => void toggleNearMe()}
-        onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1) }}
+        onDistance={(km) => void changeDistance(km)}
+        onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1); setLocationError(null) }}
       />
 
       <main className="main">
@@ -137,8 +139,8 @@ export default function App() {
           pins={pins}
           selectedId={selectedId}
           focus={focus}
-          myLocation={filters.nearMe ? myLocation : null}
-          radiusKm={filters.nearMe ? filters.radiusKm : null}
+          myLocation={filters.radiusKm !== null ? myLocation : null}
+          radiusKm={filters.radiusKm}
           onSelect={(id) => openAd(id)}
           onBoundsChange={setBounds}
         />
