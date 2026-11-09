@@ -27,10 +27,10 @@ public sealed class JsonFileAdRepository(
     private volatile Snapshot _snapshot = Snapshot.NotLoaded;
 
     public async Task<IReadOnlyList<Ad>> GetAllAsync(CancellationToken ct) =>
-        (await GetFileAsync(ct)).Ads;
+        (await GetSnapshotFileAsync(ct)).Ads;
 
     public async Task<Ad?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        (await GetFileAsync(ct)).ById.GetValueOrDefault(id);
+        (await GetSnapshotFileAsync(ct)).ById.GetValueOrDefault(id);
 
     public Task AddAsync(Ad ad, CancellationToken ct) =>
         UpdateJsonFileAsync(ads =>
@@ -55,7 +55,7 @@ public sealed class JsonFileAdRepository(
         }, ct);
 
     /// <summary>The current snapshot, reloading it first if another server has written since.</summary>
-    private async Task<Snapshot> GetFileAsync(CancellationToken ct)
+    private async Task<Snapshot> GetSnapshotFileAsync(CancellationToken ct)
     {
         var current = _snapshot;
         var fileVersion = await store.ReadVersionAsync(ct);
