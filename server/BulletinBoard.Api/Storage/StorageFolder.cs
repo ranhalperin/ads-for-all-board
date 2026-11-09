@@ -5,7 +5,9 @@ namespace BulletinBoard.Api.Storage;
 /// <summary>The three files of the store (ads.json, ads.version, ads.lock), all in one folder.</summary>
 public class StorageFolder(string path)
 {
-    
+    /// <summary>The name of the store's shared lock: <see cref="GetLockFile"/> turns it into ads.lock.</summary>
+    public const string LockKeyName = "ads";
+
     // Built once: the folder never changes.
     private readonly string _adsFile = IOPath.Combine(path, "ads.json");
     private readonly string _versionFile = IOPath.Combine(path, "ads.version");
