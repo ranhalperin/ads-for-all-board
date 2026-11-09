@@ -17,12 +17,12 @@ public sealed partial class AdsController(IAdService service) : ControllerBase
 {
     public const string OwnerHeader = "X-Owner-Id";
 
-    /// <summary>Search ads: filters, sort and one page.</summary>
+    /// <summary>Search ads: filters, newest first, one page.</summary>
     [HttpGet]
     public Task<PagedResult<AdResponse>> Search([FromQuery] AdQuery query, CancellationToken ct) =>
         service.SearchAsync(query, OwnerId(required: query.MineOnly), ct);
 
-    /// <summary>Light pins for the map, with the same filters (paging and sort are ignored).</summary>
+    /// <summary>Light pins for the map, with the same filters (paging is ignored).</summary>
     [HttpGet("pins")]
     public Task<PinsResult> Pins([FromQuery] AdQuery query, CancellationToken ct) =>
         service.GetPinsAsync(query, OwnerId(required: query.MineOnly), ct);
