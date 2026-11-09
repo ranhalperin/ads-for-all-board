@@ -13,8 +13,6 @@ export const t = {
   anyDistance: 'Any distance',
   locating: 'Finding you…',
   withinKm: (km: number) => `Within ${km} km`,
-  myAds: 'My ads',
-  yourName: 'Your contact name',
   clearFilters: 'Clear',
 
   results: (n: number) => `${n.toLocaleString()} ${n === 1 ? 'ad' : 'ads'}`,

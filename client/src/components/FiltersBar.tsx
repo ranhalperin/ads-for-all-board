@@ -3,17 +3,15 @@ import { CATEGORIES, DISTANCES_KM, type Filters } from '../types'
 
 interface Props {
   filters: Filters
-  myName: string
   locating: boolean
   locationError: string | null
   onChange: (patch: Partial<Filters>) => void
-  onMyName: (name: string) => void
   onDistance: (km: number | null) => void
   onClear: () => void
 }
 
-/** Search by title, then: my ads (by your contact name), category, price from–to, distance. */
-export function FiltersBar({ filters, myName, locating, locationError, onChange, onMyName, onDistance, onClear }: Props) {
+/** Search by title, then: category, price from–to, distance. */
+export function FiltersBar({ filters, locating, locationError, onChange, onDistance, onClear }: Props) {
   return (
     <section className="filters" aria-label="Filters">
       <input
@@ -27,23 +25,6 @@ export function FiltersBar({ filters, myName, locating, locationError, onChange,
       />
 
       <div className="filter-row">
-        <label className="check">
-          <input type="checkbox" checked={filters.mineOnly} onChange={(e) => onChange({ mineOnly: e.target.checked })} />
-          {t.myAds}
-        </label>
-        {filters.mineOnly && (
-          <input
-            className="my-name"
-            placeholder={t.yourName}
-            aria-label={t.yourName}
-            value={myName}
-            maxLength={60}
-            autoComplete="name"
-            autoFocus={!myName}
-            onChange={(e) => onMyName(e.target.value)}
-          />
-        )}
-
         <select
           aria-label={t.allCategories}
           value={filters.category}

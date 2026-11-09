@@ -8,7 +8,7 @@ namespace BulletinBoard.Api.Controllers;
 [ApiController]
 [Route("api/ads")]
 [Produces("application/json")]
-public sealed class AdsController(IAdService service) : ControllerBase
+public class AdsController(IAdService service) : ControllerBase
 {
     /// <summary>Search ads: filters, newest first, one page.</summary>
     [HttpGet]

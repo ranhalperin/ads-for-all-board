@@ -36,13 +36,11 @@ export default function App() {
   // Typing in the search box and moving the map settle before they hit the API.
   const debouncedFilters = useDebounced(filters, 300)
   const debouncedBounds = useDebounced(bounds, 400)
-  const debouncedName = useDebounced(myName, 300)
-  const context = useMemo(() => ({ location: myLocation, myName: debouncedName }), [myLocation, debouncedName])
-  const listParams = useMemo(() => toQueryParams(debouncedFilters, context, page), [debouncedFilters, context, page])
+  const listParams = useMemo(() => toQueryParams(debouncedFilters, myLocation, page), [debouncedFilters, myLocation, page])
   // The map gets the same filters, limited to the area in view.
   const pinParams = useMemo(
-    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, context), ...boundsParams(debouncedBounds) } : null),
-    [debouncedFilters, context, debouncedBounds],
+    () => (debouncedBounds ? { ...toQueryParams(debouncedFilters, myLocation), ...boundsParams(debouncedBounds) } : null),
+    [debouncedFilters, myLocation, debouncedBounds],
   )
 
   // The list: one page of matching ads.
@@ -78,11 +76,10 @@ export default function App() {
     setPage(1)
   }, [])
 
-  /** Your contact name marks your ads; it's remembered in this browser. */
+  /** The contact name of your last saved ad marks your ads; it's remembered in this browser. */
   const changeMyName = (name: string) => {
     setMyName(name)
     saveMyName(name)
-    setPage(1)
   }
 
   /** Picking a distance needs the user's location; ask for it the first time. "Any" turns the filter off. */
@@ -126,11 +123,9 @@ export default function App() {
 
       <FiltersBar
         filters={filters}
-        myName={myName}
         locating={locating}
         locationError={locationError}
         onChange={updateFilters}
-        onMyName={changeMyName}
         onDistance={(km) => void changeDistance(km)}
         onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1); setLocationError(null) }}
       />
@@ -167,7 +162,7 @@ export default function App() {
           onClose={() => setPanel({ mode: 'closed' })}
           onEdit={(ad) => setPanel({ mode: 'edit', ad })}
           onSaved={(ad) => {
-            changeMyName(ad.contactName) // the name you post under is how your ads are found
+            changeMyName(ad.contactName) // the name you post under marks your ads
             openAd(ad.id, { lat: ad.latitude, lng: ad.longitude })
             setRefreshKey((k) => k + 1)
           }}

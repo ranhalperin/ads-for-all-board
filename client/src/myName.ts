@@ -4,7 +4,7 @@ const KEY = 'bulletin-board.my-name'
 
 /**
  * There are no accounts: the contact name you post under is what marks an ad as yours.
- * The browser remembers it (from your last saved ad, or what you type next to "My ads").
+ * The browser remembers it from your last saved ad.
  */
 export function loadMyName(): string {
   try {
@@ -22,7 +22,7 @@ export function saveMyName(name: string): void {
   }
 }
 
-/** Same rule as the API's contactName filter: the whole name, ignoring case and outer spaces. */
+/** The whole name, ignoring case and outer spaces. */
 export function isMine(ad: Pick<Ad, 'contactName'>, myName: string): boolean {
   const me = myName.trim().toLowerCase()
   return me !== '' && ad.contactName.trim().toLowerCase() === me

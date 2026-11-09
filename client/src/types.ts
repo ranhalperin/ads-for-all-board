@@ -69,7 +69,6 @@ export interface AdRequest {
 /** What the filters bar holds. Text inputs stay strings until the query is built. Results are always newest first. */
 export interface Filters {
   search: string
-  mineOnly: boolean
   category: Category | ''
   minPrice: string
   maxPrice: string
@@ -79,7 +78,6 @@ export interface Filters {
 
 export const DEFAULT_FILTERS: Filters = {
   search: '',
-  mineOnly: false,
   category: '',
   minPrice: '',
   maxPrice: '',

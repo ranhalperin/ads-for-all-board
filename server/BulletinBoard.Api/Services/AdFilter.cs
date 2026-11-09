@@ -26,10 +26,6 @@ public static class AdFilter
         if (q.MaxPrice is { } max)
             result = result.Where(a => a.Price <= max);
 
-        var contactName = q.ContactName?.Trim();
-        if (!string.IsNullOrEmpty(contactName))
-            result = result.Where(a => string.Equals(a.ContactName, contactName, StringComparison.OrdinalIgnoreCase));
-
         if (q.HasBounds)
         {
             var visible = new BoundingBox(q.South!.Value, q.West!.Value, q.North!.Value, q.East!.Value);

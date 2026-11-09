@@ -63,17 +63,6 @@ public class ApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Contact_name_filter_finds_that_persons_ads()
-    {
-        var client = Client();
-        await client.PostAsJsonAsync("/api/ads", NewAd());
-        await client.PostAsJsonAsync("/api/ads", new { title = "Desk", description = "Oak desk", category = "ForSale", contactName = "Yossi", contactPhone = "052-7654321", latitude = 32.07, longitude = 34.79 });
-
-        var dana = (await client.GetFromJsonAsync<PagedResult<AdResponse>>("/api/ads?contactName=dana", Json))!;
-        Assert.Equal("Lamp", Assert.Single(dana.Items).Title);
-    }
-
-    [Fact]
     public async Task Invalid_ad_returns_field_errors()
     {
         var response = await Client().PostAsJsonAsync("/api/ads", new { title = "x", category = "ForSale" });

@@ -2,7 +2,7 @@
 
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 
-- Browse every ad, newest first. **Search by title**, and filter by **my ads** (by your contact name), **category**, **price from–to** and **distance** (within 1–100 km of your location).
+- Browse every ad, newest first. **Search by title**, and filter by **category**, **price from–to** and **distance** (within 1–100 km of your location).
 - **Create, edit and delete** your own ads: the ones posted under your contact name.
 - **Bonus:** every ad has a map location, set by address search, "use my location", clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
 
@@ -30,7 +30,7 @@ The first run creates `server/BulletinBoard.Api/data/` from `SeedData/ads.json` 
 ### Tests
 
 ```bash
-dotnet test                       # API: 33 tests (filters, file store, two-server locking, HTTP)
+dotnet test                       # API: 31 tests (filters, file store, two-server locking, HTTP)
 cd client && npm test             # client: query building, validation, address labels
 cd client && npm run typecheck
 ```
@@ -61,7 +61,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | Part | What it does |
 |---|---|
 | `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
-| `components/FiltersBar` | Title search (debounced), my ads (asks for your contact name), category, price from–to, distance (asks for your location the first time) |
+| `components/FiltersBar` | Title search (debounced), category, price from–to, distance (asks for your location the first time) |
 | `components/AdsList` | One page of results, with edit and delete on your own ads |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
@@ -74,7 +74,7 @@ Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API
 
 | Endpoint | |
 |---|---|
-| `GET /api/ads?search=&contactName=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
+| `GET /api/ads?search=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
 | `GET /api/ads/pins?<same filters>&north=&south=&east=&west=` | Light pins for the map area in view (id, title, category, lat, lng), capped at 2,000 |
 | `GET /api/ads/{id}` | One ad |
 | `POST /api/ads` | Create (201 + Location) |
@@ -92,7 +92,7 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 409 w
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
 
-**"My ads" without accounts:** the contact name is the identity. The browser remembers the name you last posted under (localStorage), or the one you type next to "My ads". "My ads" sends it as `contactName` (whole name, ignoring case), and Edit and Delete appear only on ads with that name. The server itself doesn't check who edits or deletes: this keeps the board simple, but anyone who uses the same name, or calls the API directly, can change those ads. A real deployment would add a login (JWT) and store the user id on each ad.
+**Your ads without accounts:** the contact name is the identity. The browser remembers the name of the last ad you saved (localStorage); ads with that contact name (whole name, ignoring case) get a "Your ad" badge and Edit / Delete, and a new ad starts with that name filled in. The server itself doesn't check who edits or deletes: this keeps the board simple, but anyone who uses the same name, or calls the API directly, can change those ads. A real deployment would add a login (JWT) and store the user id on each ad.
 
 ## Keeping one JSON file consistent across servers
 

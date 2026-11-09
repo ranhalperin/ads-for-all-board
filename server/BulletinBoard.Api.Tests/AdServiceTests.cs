@@ -76,17 +76,6 @@ public class AdServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Contact_name_filter_matches_the_whole_name_ignoring_case()
-    {
-        await SeedAsync();
-        var dana = await Search(new AdQuery { ContactName = " dana " });
-        Assert.Equal(["Waiter wanted", "City bike"], dana.Items.Select(a => a.Title));
-
-        var partial = await Search(new AdQuery { ContactName = "Dan" });
-        Assert.Empty(partial.Items);
-    }
-
-    [Fact]
     public async Task Pages_return_the_total_and_the_requested_slice()
     {
         await SeedAsync();

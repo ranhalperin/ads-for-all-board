@@ -166,4 +166,3 @@ path.me { fill: var(--accent); fill-opacity: 1; stroke: #fff; stroke-width: 3; }
   .two { grid-template-columns: 1fr; }
   .price-range input { width: 76px; }
 }
-.my-name { width: 170px; }
