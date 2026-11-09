@@ -6,5 +6,5 @@ namespace BulletinBoard.Api.Storage;
 /// </summary>
 public interface IDistributedLock
 {
-    Task<IAsyncDisposable> AcquireAsync(string name, TimeSpan timeout, CancellationToken ct);
+    Task<IAsyncDisposable> AtomicLockBetweenServers(string name, TimeSpan timeout, CancellationToken ct);
 }

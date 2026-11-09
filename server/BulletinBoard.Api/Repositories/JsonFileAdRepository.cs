@@ -134,13 +134,19 @@ public sealed class JsonFileAdRepository(
     private async Task<T> AtomicServersIOAction<T>(Func<Task<T>> action, CancellationToken ct)
     {
         var waited = Stopwatch.StartNew();
-        if (!await _localLock.WaitAsync(options.LockTimeout, ct))
+        if (!await _localLock.WaitAsync(options.LockTimeout, ct)) // lock within the server before locking between servers
             throw new StorageBusyException();
         try
         {
             var left = options.LockTimeout - waited.Elapsed;
-            await using var _ = await sharedLock.AcquireAsync(StorageFolder.LockKeyName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct);
-            return await action();
+
+            // Lock between servers: ads.lock stays open (locked) for the whole block,
+            // and is closed (released) when the block ends, even if action() throws.
+            await using (var serversLock = await sharedLock.AtomicLockBetweenServers(
+                             StorageFolder.LockKeyName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct))
+            {
+                return await action();
+            } // ← serversLock.DisposeAsync() runs here: ads.lock is released
         }
         finally
         {
