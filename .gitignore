@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+TestResults/
+# Runtime store: created from SeedData on first run
+server/BulletinBoard.Api/data/
+node_modules/
+dist/
+coverage/
