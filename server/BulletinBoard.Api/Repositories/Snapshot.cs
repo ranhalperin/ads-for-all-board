@@ -7,7 +7,7 @@ namespace BulletinBoard.Api.Repositories;
 /// Immutable: a change builds a new snapshot and the repository swaps it in one step,
 /// so readers never see a half-applied change.
 /// </summary>
-internal sealed class Snapshot
+internal class Snapshot
 {
     /// <summary>Before the first load. Its version (-1) never matches the file's.</summary>
     public static readonly Snapshot NotLoaded = new(-1, []);

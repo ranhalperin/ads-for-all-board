@@ -27,16 +27,3 @@ public sealed class StorageOptions
 
     public TimeSpan LockTimeout => TimeSpan.FromSeconds(LockTimeoutSeconds);
 }
-
-/// <summary>The three files of the store, all in one folder.</summary>
-public sealed record StorageFolder(string Path)
-{
-    public string AdsFile => System.IO.Path.Combine(Path, "ads.json");
-    public string VersionFile => System.IO.Path.Combine(Path, "ads.version");
-    public string LockFile(string name) => System.IO.Path.Combine(Path, name + ".lock");
-
-    public static StorageFolder Resolve(string folderPath, string contentRoot) =>
-        new(System.IO.Path.GetFullPath(System.IO.Path.IsPathRooted(folderPath)
-            ? folderPath
-            : System.IO.Path.Combine(contentRoot, folderPath)));
-}
