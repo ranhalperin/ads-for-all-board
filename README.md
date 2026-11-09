@@ -30,7 +30,7 @@ The first run creates `server/BulletinBoard.Api/data/` from `SeedData/ads.json` 
 ### Tests
 
 ```bash
-dotnet test                       # API: 30 tests (filters, file store, two-server locking, HTTP)
+dotnet test                       # API: 32 tests (filters, file store, two-server locking, HTTP)
 cd client && npm test             # client: query building, validation, address labels
 cd client && npm run typecheck
 ```
@@ -86,8 +86,8 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 +
 | Class | Role |
 |---|---|
 | `AdsController` | HTTP only: binds the request, calls the service |
-| `AdService` / `AdFilter` | Search (filters, distance, newest first, paging), sets id / dates, trims text |
-| `JsonFileAdRepository` | The in-memory snapshot and the write procedure below |
+| `AdService` | Turns the query string into an `AdSearch` and the results into JSON; sets id / dates, trims text |
+| `JsonFileAdRepository` + `AdFilter` | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
 | `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
@@ -129,7 +129,7 @@ Measured on a laptop with 100,000 generated ads (47.8 MB file):
 The limit comes from the single file: every write rewrites it and every other server reloads it. Beyond ~100K:
 
 - **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each with its own lock and version file, and keep only a slim index in memory (id, title, category, price, lat/lng, contact name, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
-- **Free choice:** a database (PostgreSQL + PostGIS, MongoDB with a geo index, DynamoDB). Only a new `IAdRepository` is needed; the controller, service and client stay the same.
+- **Free choice:** a database (PostgreSQL + PostGIS, MongoDB with a geo index, DynamoDB). Only a new `IAdRepository` is needed: it turns the same `AdSearch` into a database query (`WHERE`, `ORDER BY created DESC LIMIT`, a geo index). The controller, service and client stay the same.
 
 ## Configuration (`appsettings.json`)
 

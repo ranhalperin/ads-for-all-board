@@ -1,37 +1,29 @@
 using BulletinBoard.Api.Dtos;
 using BulletinBoard.Api.Errors;
+using BulletinBoard.Api.Geo;
 using BulletinBoard.Api.Models;
 using BulletinBoard.Api.Repositories;
 using BulletinBoard.Api.Storage;
 
 namespace BulletinBoard.Api.Services;
 
-/// <summary>Business rules: searching and the fields the server sets itself.</summary>
+/// <summary>Business rules: turns API requests into repository calls, and sets the fields the server owns (id, dates).</summary>
 public sealed class AdService(IAdRepository repository, StorageOptions options, TimeProvider clock) : IAdService
 {
     public async Task<PagedResult<AdResponse>> SearchAsync(AdQuery query, CancellationToken ct)
     {
-        var matches = AdFilter.Apply(await repository.GetAllAsync(ct), query);
-        var page = AdFilter.NewestFirst(matches)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(m => AdResponse.From(m.Ad, m.DistanceKm))
-            .ToList();
-        return new PagedResult<AdResponse>(page, matches.Count, query.Page, query.PageSize);
+        var found = await repository.SearchAsync(ToSearch(query), query.Page, query.PageSize, ct);
+        var items = found.Items.Select(m => AdResponse.From(m.Ad, m.DistanceKm)).ToList();
+        return new PagedResult<AdResponse>(items, found.Total, query.Page, query.PageSize);
     }
 
     public async Task<PinsResult> GetPinsAsync(AdQuery query, CancellationToken ct)
     {
-        var matches = AdFilter.Apply(await repository.GetAllAsync(ct), query);
-        var truncated = matches.Count > options.MaxPins;
-        // Sorting costs time, so only when we must choose which pins to leave out (newest win).
-        IEnumerable<AdFilter.Match> chosen = truncated
-            ? AdFilter.NewestFirst(matches).Take(options.MaxPins)
-            : matches;
-        var pins = chosen
-            .Select(m => new AdPin(m.Ad.Id, m.Ad.Title, m.Ad.Category, m.Ad.Latitude, m.Ad.Longitude))
+        var found = await repository.GetPinsAsync(ToSearch(query), options.MaxPins, ct);
+        var pins = found.Ads
+            .Select(a => new AdPin(a.Id, a.Title, a.Category, a.Latitude, a.Longitude))
             .ToList();
-        return new PinsResult(pins, matches.Count, truncated);
+        return new PinsResult(pins, found.Total, Truncated: found.Total > pins.Count);
     }
 
     public async Task<AdResponse> GetAsync(Guid id, CancellationToken ct)
@@ -76,6 +68,18 @@ public sealed class AdService(IAdRepository repository, StorageOptions options, 
         Latitude = r.Latitude ?? 0,
         Longitude = r.Longitude ?? 0,
         Address = NullIfBlank(r.Address),
+    };
+
+    /// <summary>The API query string as a repository search. Blank text means "no title filter".</summary>
+    private static AdSearch ToSearch(AdQuery q) => new()
+    {
+        Title = NullIfBlank(q.Search),
+        Category = q.Category,
+        MinPrice = q.MinPrice,
+        MaxPrice = q.MaxPrice,
+        Location = q.HasCentre ? new GeoPoint(q.Lat!.Value, q.Lng!.Value) : null,
+        RadiusKm = q.RadiusKm,
+        Area = q.HasBounds ? new BoundingBox(q.South!.Value, q.West!.Value, q.North!.Value, q.East!.Value) : null,
     };
 
     private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

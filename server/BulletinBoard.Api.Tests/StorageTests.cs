@@ -13,7 +13,7 @@ public class StorageTests : IDisposable
     public async Task Empty_folder_starts_with_no_ads_and_version_0()
     {
         var server = _store.NewServer();
-        Assert.Empty(await server.GetAllAsync(default));
+        Assert.Empty(await server.AllAsync());
         Assert.True(File.Exists(_store.Folder.AdsFile));
         Assert.Equal("0", await File.ReadAllTextAsync(_store.Folder.VersionFile));
     }
@@ -25,7 +25,7 @@ public class StorageTests : IDisposable
         await _store.NewServer().AddAsync(ad, default);
 
         var restarted = _store.NewServer();
-        var loaded = Assert.Single(await restarted.GetAllAsync(default));
+        var loaded = Assert.Single(await restarted.AllAsync());
         Assert.Equal(ad, loaded);
     }
 
@@ -47,12 +47,12 @@ public class StorageTests : IDisposable
     {
         var server1 = _store.NewServer();
         var server2 = _store.NewServer();
-        Assert.Empty(await server2.GetAllAsync(default)); // server 2 has loaded and cached the empty list
+        Assert.Empty(await server2.AllAsync()); // server 2 has loaded and cached the empty list
 
         var ad = Ads.Make("Posted on server 1");
         await server1.AddAsync(ad, default);
 
-        var seen = Assert.Single(await server2.GetAllAsync(default));
+        var seen = Assert.Single(await server2.AllAsync());
         Assert.Equal("Posted on server 1", seen.Title);
         Assert.NotNull(await server2.GetByIdAsync(ad.Id, default));
     }
@@ -62,12 +62,12 @@ public class StorageTests : IDisposable
     {
         var server1 = _store.NewServer();
         var server2 = _store.NewServer();
-        await server2.GetAllAsync(default); // cache the empty list
+        await server2.AllAsync(); // cache the empty list
 
         await server1.AddAsync(Ads.Make("From server 1"), default);
         await server2.AddAsync(Ads.Make("From server 2"), default); // its cache is stale: must re-read first
 
-        var titles = (await _store.NewServer().GetAllAsync(default)).Select(a => a.Title).Order();
+        var titles = (await _store.NewServer().AllAsync()).Select(a => a.Title).Order();
         Assert.Equal(["From server 1", "From server 2"], titles);
     }
 
@@ -85,7 +85,7 @@ public class StorageTests : IDisposable
         });
         await Task.WhenAll(writes);
 
-        var all = await _store.NewServer().GetAllAsync(default);
+        var all = await _store.NewServer().AllAsync();
         Assert.Equal(2 * perServer, all.Count);
         Assert.Equal(2 * perServer, all.Select(a => a.Id).Distinct().Count());
         Assert.Equal((2 * perServer).ToString(), await File.ReadAllTextAsync(_store.Folder.VersionFile));
@@ -134,6 +134,6 @@ public class StorageTests : IDisposable
 
         await held.DisposeAsync();
         await write;
-        Assert.Single(await server.GetAllAsync(default));
+        Assert.Single(await server.AllAsync());
     }
 }

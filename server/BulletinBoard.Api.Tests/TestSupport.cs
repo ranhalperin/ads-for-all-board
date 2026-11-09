@@ -49,3 +49,10 @@ public static class Ads
         CreatedAt = created ?? DateTime.UtcNow,
     };
 }
+
+public static class RepositoryTestExtensions
+{
+    /// <summary>Every stored ad (newest first): a search with no criteria and one page big enough for all.</summary>
+    public static async Task<IReadOnlyList<Ad>> AllAsync(this IAdRepository repository) =>
+        (await repository.SearchAsync(new AdSearch(), 1, int.MaxValue, default)).Items.Select(m => m.Ad).ToList();
+}

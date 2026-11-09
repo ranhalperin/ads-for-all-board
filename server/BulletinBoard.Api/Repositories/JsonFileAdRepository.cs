@@ -26,8 +26,25 @@ public sealed class JsonFileAdRepository(
     private readonly SemaphoreSlim _localLock = new(1, 1);
     private volatile JsonFileSnapshot _snapshot = JsonFileSnapshot.NotLoaded;
 
-    public async Task<IReadOnlyList<Ad>> GetAllAsync(CancellationToken ct) =>
-        (await GetSnapshotFileAsync(ct)).Ads;
+    public async Task<AdSearchPage> SearchAsync(AdSearch search, int page, int pageSize, CancellationToken ct)
+    {
+        var matches = AdFilter.Apply((await GetSnapshotFileAsync(ct)).Ads, search);
+        var items = AdFilter.NewestFirst(matches)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+        return new AdSearchPage(items, matches.Count);
+    }
+
+    public async Task<AdPinsPage> GetPinsAsync(AdSearch search, int maxPins, CancellationToken ct)
+    {
+        var matches = AdFilter.Apply((await GetSnapshotFileAsync(ct)).Ads, search);
+        // Sorting costs time, so only when we must choose which pins to leave out (newest win).
+        IEnumerable<AdMatch> chosen = matches.Count > maxPins
+            ? AdFilter.NewestFirst(matches).Take(maxPins)
+            : matches;
+        return new AdPinsPage(chosen.Select(m => m.Ad).ToList(), matches.Count);
+    }
 
     public async Task<Ad?> GetByIdAsync(Guid id, CancellationToken ct) =>
         (await GetSnapshotFileAsync(ct)).ById.GetValueOrDefault(id);
