@@ -1,4 +1,4 @@
-# Ads For All Board
+# Ads For All - Boards
 
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 

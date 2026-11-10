@@ -2,7 +2,7 @@ import type { Category } from './types'
 
 /** Every user-visible string, in one place. Adding a language means adding a second object like this one. */
 export const t = {
-  appName: 'Ads For All Board',
+  appName: 'Ads For All - Boards',
   newAd: 'New ad',
 
   searchPlaceholder: 'Search by title…',
