@@ -1,7 +1,7 @@
 import type { Ad, AdRequest, Bounds, Filters, LatLng, PagedResult, PinsResult } from '../types'
 import { http } from './http'
 
-export const PAGE_SIZE = 5
+export const PAGE_SIZE = 7
 
 /**
  * Turns the filters bar into API query parameters. Empty filters are left out; the distance is

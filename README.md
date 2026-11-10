@@ -56,7 +56,7 @@ React SPA (one screen)                     .NET 10 API                          
 
 ### Client (`client/`)
 
-React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads list (one page of 5), the map, and a side panel that shows an ad or the create/edit form. Nothing reloads the page.
+React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads list (one page of 7), the map, and a side panel that shows an ad or the create/edit form. Nothing reloads the page.
 
 | Part | What it does |
 |---|---|
