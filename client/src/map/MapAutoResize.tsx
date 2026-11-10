@@ -5,7 +5,7 @@ import { useMap } from 'react-leaflet'
  * Leaflet measures its box once. When the box changes size (the side panel opens, the window is
  * resized), it must re-measure, or parts of the map stay grey.
  */
-export function AutoResize() {
+export function MapAutoResize() {
   const map = useMap()
   useEffect(() => {
     const container = map.getContainer()

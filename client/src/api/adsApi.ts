@@ -1,5 +1,5 @@
 import type { Ad, AdRequest, Bounds, Filters, LatLng, PagedResult, PinsResult } from '../types'
-import { http } from './http'
+import { http } from './apiClient'
 
 export const PAGE_SIZE = 7
 

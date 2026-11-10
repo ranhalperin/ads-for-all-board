@@ -11,7 +11,7 @@ interface Props {
 }
 
 /** The box over the board's map: search an address to pin your place, or remove the pin. */
-export function PlaceSearch({ pinned, label, onPlace, onClear }: Props) {
+export function MapPlaceSearch({ pinned, label, onPlace, onClear }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Place[] | null>(null)
   const [busy, setBusy] = useState(false)

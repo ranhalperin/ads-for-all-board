@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { formatDate, formatPrice } from '../formatters'
-import { AutoResize } from '../map/AutoResize'
-import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
+import { MapAutoResize } from '../map/MapAutoResize'
+import { TILE_ATTRIBUTION, TILE_URL } from '../map/leafletSetup'
 import { categoryLabel, t } from '../appText'
 import type { Ad } from '../types'
 
@@ -39,7 +39,7 @@ export function AdDetails({ ad, confirmDelete, deleting, onEdit, onAskDelete, on
       <MapContainer key={ad.id} center={[point.lat, point.lng]} zoom={14} className="details-map"
         dragging={false} scrollWheelZoom={false} doubleClickZoom={false} zoomControl={false}>
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
-        <AutoResize />
+        <MapAutoResize />
         <Marker position={[point.lat, point.lng]} />
       </MapContainer>
       {ad.address && <p className="muted">📍 {ad.address}{ad.distanceKm != null && ` · ${t.kmAway(ad.distanceKm)}`}</p>}

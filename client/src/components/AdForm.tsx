@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { createAd, updateAd } from '../api/ads'
-import { errorMessage, fieldErrors } from '../api/http'
+import { createAd, updateAd } from '../api/adsApi'
+import { errorMessage, fieldErrors } from '../api/apiClient'
 import { categoryLabel, t } from '../appText'
 import { CATEGORIES, type Ad, type Category } from '../types'
 import { EMPTY_FORM, formFromAd, toRequest, validateAd, type AdFormValues, type FormErrors } from '../adForm'
-import { LocationPicker } from './LocationPicker'
+import { AdLocationPicker } from './AdLocationPicker'
 
 interface Props {
   ad: Ad | null // null = new ad
@@ -50,48 +50,48 @@ export function AdForm({ ad, onSaved, onCancel }: Props) {
     <form className="ad-form" onSubmit={submit} noValidate>
       <h2>{ad ? t.editAdTitle : t.newAdTitle}</h2>
 
-      <Field label={t.fieldTitle} error={errors.title} required>
+      <FormField label={t.fieldTitle} error={errors.title} required>
         <input value={values.title} maxLength={100} placeholder={t.placeholderTitle}
           onChange={(e) => set('title', e.target.value)} />
-      </Field>
+      </FormField>
 
-      <Field label={t.fieldDescription} error={errors.description} required>
+      <FormField label={t.fieldDescription} error={errors.description} required>
         <textarea rows={4} value={values.description} maxLength={2000} placeholder={t.placeholderDescription}
           onChange={(e) => set('description', e.target.value)} />
-      </Field>
+      </FormField>
 
       <div className="two">
-        <Field label={t.fieldCategory} error={errors.category} required>
+        <FormField label={t.fieldCategory} error={errors.category} required>
           <select value={values.category} onChange={(e) => set('category', e.target.value as Category | '')}>
             <option value="">{t.chooseCategory}</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{categoryLabel[c]}</option>)}
           </select>
-        </Field>
-        <Field label={t.fieldPrice} error={errors.price} hint={t.fieldPriceHint}>
+        </FormField>
+        <FormField label={t.fieldPrice} error={errors.price} hint={t.fieldPriceHint}>
           <input type="number" min={0} inputMode="numeric" value={values.price}
             onChange={(e) => set('price', e.target.value)} />
-        </Field>
+        </FormField>
       </div>
 
       <div className="two">
-        <Field label={t.fieldContactName} error={errors.contactName} required>
+        <FormField label={t.fieldContactName} error={errors.contactName} required>
           <input value={values.contactName} maxLength={60} placeholder={t.placeholderName} autoComplete="name"
             onChange={(e) => set('contactName', e.target.value)} />
-        </Field>
-        <Field label={t.fieldContactPhone} error={errors.contactPhone} required>
+        </FormField>
+        <FormField label={t.fieldContactPhone} error={errors.contactPhone} required>
           <input type="tel" value={values.contactPhone} maxLength={20} placeholder={t.placeholderPhone} autoComplete="tel"
             onChange={(e) => set('contactPhone', e.target.value)} />
-        </Field>
+        </FormField>
       </div>
 
-      <Field label={t.fieldImageUrl} error={errors.imageUrl}>
+      <FormField label={t.fieldImageUrl} error={errors.imageUrl}>
         <input type="url" value={values.imageUrl} maxLength={500} placeholder={t.placeholderImage}
           onChange={(e) => set('imageUrl', e.target.value)} />
-      </Field>
+      </FormField>
 
       <div className="field">
         <span className="label">{t.fieldLocation} <span className="req">*</span></span>
-        <LocationPicker
+        <AdLocationPicker
           value={values.location}
           address={values.address}
           error={errors.location}
@@ -113,7 +113,7 @@ export function AdForm({ ad, onSaved, onCancel }: Props) {
   )
 }
 
-function Field({ label, error, hint, required, children }: {
+function FormField({ label, error, hint, required, children }: {
   label: string
   error?: string
   hint?: string

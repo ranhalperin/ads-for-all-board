@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
 import type { LeafletEventHandlerFnMap, Marker as LeafletMarker } from 'leaflet'
 import { reverseGeocode, searchAddress, type Place } from '../api/geocoding'
 import { ISRAEL_CENTER } from '../browserLocation'
-import { AutoResize } from '../map/AutoResize'
-import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
+import { FlyTo } from '../map/FlyTo'
+import { MapAutoResize } from '../map/MapAutoResize'
+import { TILE_ATTRIBUTION, TILE_URL } from '../map/leafletSetup'
 import { t } from '../appText'
 import type { LatLng } from '../types'
 
@@ -20,7 +21,7 @@ interface Props {
  * Picks the ad's location: search an address, click the map, or drag the pin.
  * After the pin settles, the address is looked up from it (Nominatim allows ~1 request a second).
  */
-export function LocationPicker({ value, address, error, onChange, onAddress }: Props) {
+export function AdLocationPicker({ value, address, error, onChange, onAddress }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Place[] | null>(null)
   const [busy, setBusy] = useState(false)
@@ -107,9 +108,9 @@ export function LocationPicker({ value, address, error, onChange, onAddress }: P
         className="picker-map"
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
-        <AutoResize />
+        <MapAutoResize />
         <ClickToPlace onPlace={(p) => moveTo(p, null, true)} />
-        <Recenter point={value} />
+        <FlyTo point={value} minZoom={15} />
         {value && <DraggablePin point={value} onMove={(p) => moveTo(p, null, true)} />}
       </MapContainer>
 
@@ -126,17 +127,6 @@ export function LocationPicker({ value, address, error, onChange, onAddress }: P
 
 function ClickToPlace({ onPlace }: { onPlace: (p: LatLng) => void }) {
   useMapEvents({ click: (e) => onPlace({ lat: e.latlng.lat, lng: e.latlng.lng }) })
-  return null
-}
-
-function Recenter({ point }: { point: LatLng | null }) {
-  const map = useMap()
-  useEffect(() => {
-    // Zoom in to street level so the pin can be fine-tuned, or pan if it's off-screen.
-    if (point && (map.getZoom() < 14 || !map.getBounds().pad(-0.1).contains([point.lat, point.lng]))) {
-      map.setView([point.lat, point.lng], Math.max(map.getZoom(), 15))
-    }
-  }, [map, point])
   return null
 }
 

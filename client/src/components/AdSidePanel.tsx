@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { deleteAd, getAd } from '../api/ads'
-import { errorMessage, isCanceled, isNotFound } from '../api/http'
+import { deleteAd, getAd } from '../api/adsApi'
+import { errorMessage, isCanceled, isNotFound } from '../api/apiClient'
 import { t } from '../appText'
 import type { Ad, PanelState } from '../types'
 import { AdDetails } from './AdDetails'
@@ -17,7 +17,7 @@ interface Props {
 }
 
 /** The side panel: shows an ad, or the form to create / edit one. */
-export function AdPanel({ state, askDelete, onClose, onEdit, onSaved, onDeleted, onAskDelete }: Props) {
+export function AdSidePanel({ state, askDelete, onClose, onEdit, onSaved, onDeleted, onAskDelete }: Props) {
   const [loaded, setLoaded] = useState<{ id: string; ad?: Ad; error?: string } | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
-import L from './leaflet'
+import L from './leafletSetup'
 import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
@@ -15,7 +15,7 @@ interface Props {
 const selectedIcon = L.divIcon({ className: 'pin-selected', iconSize: [22, 22], iconAnchor: [11, 11] })
 
 /** Ad pins, merged into numbered bubbles where they're close together. */
-export function ClusterLayer({ pins, selectedId, onSelect }: Props) {
+export function AdPinsLayer({ pins, selectedId, onSelect }: Props) {
   const map = useMap()
   const groupRef = useRef<L.MarkerClusterGroup | null>(null)
   const onSelectRef = useRef(onSelect)

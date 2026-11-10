@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_FILTERS } from '../types'
-import { boundsParams, toQueryParams } from './ads'
+import { boundsParams, toQueryParams } from './adsApi'
 
 const here = { lat: 32.0853, lng: 34.7818 }
 

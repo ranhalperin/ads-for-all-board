@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { boundsParams, getPins, searchAds, toQueryParams } from './api/ads'
-import { errorMessage, isCanceled } from './api/http'
-import { AdPanel } from './components/AdPanel'
+import { boundsParams, getPins, searchAds, toQueryParams } from './api/adsApi'
+import { errorMessage, isCanceled } from './api/apiClient'
+import { AdSidePanel } from './components/AdSidePanel'
 import { AdsList } from './components/AdsList'
 import { AdsMap } from './components/AdsMap'
 import { reverseGeocode } from './api/geocoding'
@@ -186,7 +186,7 @@ export default function App() {
           onClearPlace={clearPlace}
         />
 
-        <AdPanel
+        <AdSidePanel
           key={selectedId ?? panel.mode}
           state={panel}
           askDelete={askDelete}
