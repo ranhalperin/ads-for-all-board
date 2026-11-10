@@ -1,4 +1,5 @@
 using BulletinBoard.Api.Errors;
+using BulletinBoard.Api.Models;
 using BulletinBoard.Api.Storage;
 
 namespace BulletinBoard.Api.Tests;
@@ -10,12 +11,11 @@ public class StorageTests : IDisposable
     public void Dispose() => _store.Dispose();
 
     [Fact]
-    public async Task Empty_folder_starts_with_no_ads_and_version_0()
+    public async Task Empty_folder_starts_with_no_ads_and_only_ads_json()
     {
         var server = _store.NewServer();
         Assert.Empty(await server.AllAsync());
-        Assert.True(File.Exists(_store.Folder.GetAdsFile()));
-        Assert.Equal("0", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
+        Assert.Equal(["ads.json"], Directory.GetFiles(_store.Folder.GetPath).Select(Path.GetFileName));
     }
 
     [Fact]
@@ -30,110 +30,107 @@ public class StorageTests : IDisposable
     }
 
     [Fact]
-    public async Task Each_write_bumps_the_version_and_leaves_no_temp_files()
+    public async Task Each_write_is_saved_and_leaves_no_temp_files()
     {
         var server = _store.NewServer();
-        var ad = Ads.Make();
-        await server.AddAsync(ad, default);
-        await server.UpdateAsync(ad with { Title = "Changed" }, default);
-        await server.DeleteAsync(ad.Id, default);
+        var kept = Ads.Make("Kept");
+        var removed = Ads.Make("Removed");
+        await server.AddAsync(kept, default);
+        await server.AddAsync(removed, default);
+        await server.UpdateAsync(kept with { Title = "Changed" }, default);
+        await server.DeleteAsync(removed.Id, default);
 
-        Assert.Equal("3", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
+        var saved = Assert.Single(await _store.NewServer().AllAsync());
+        Assert.Equal("Changed", saved.Title);
         Assert.Empty(Directory.GetFiles(_store.Folder.GetPath, "*.tmp"));
     }
 
     [Fact]
-    public async Task Server_2_sees_a_write_made_by_server_1_on_its_next_read()
+    public async Task Concurrent_writes_are_all_kept()
     {
-        var server1 = _store.NewServer();
-        var server2 = _store.NewServer();
-        Assert.Empty(await server2.AllAsync()); // server 2 has loaded and cached the empty list
+        var server = _store.NewServer();
+        const int writes = 50;
 
-        var ad = Ads.Make("Posted on server 1");
-        await server1.AddAsync(ad, default);
+        await Task.WhenAll(Enumerable.Range(0, writes)
+            .Select(i => Task.Run(() => server.AddAsync(Ads.Make($"ad-{i}"), default))));
 
-        var seen = Assert.Single(await server2.AllAsync());
-        Assert.Equal("Posted on server 1", seen.Title);
-        Assert.NotNull(await server2.GetByIdAsync(ad.Id, default));
-    }
-
-    [Fact]
-    public async Task Write_on_a_stale_server_does_not_lose_the_other_servers_ad()
-    {
-        var server1 = _store.NewServer();
-        var server2 = _store.NewServer();
-        await server2.AllAsync(); // cache the empty list
-
-        await server1.AddAsync(Ads.Make("From server 1"), default);
-        await server2.AddAsync(Ads.Make("From server 2"), default); // its cache is stale: must re-read first
-
-        var titles = (await _store.NewServer().AllAsync()).Select(a => a.Title).Order();
-        Assert.Equal(["From server 1", "From server 2"], titles);
-    }
-
-    [Fact]
-    public async Task Concurrent_writes_from_two_servers_are_all_kept()
-    {
-        var server1 = _store.NewServer();
-        var server2 = _store.NewServer();
-        const int perServer = 25;
-
-        var writes = Enumerable.Range(0, perServer).SelectMany(i => new[]
-        {
-            Task.Run(() => server1.AddAsync(Ads.Make($"s1-{i}"), default)),
-            Task.Run(() => server2.AddAsync(Ads.Make($"s2-{i}"), default)),
-        });
-        await Task.WhenAll(writes);
-
-        var all = await _store.NewServer().AllAsync();
-        Assert.Equal(2 * perServer, all.Count);
-        Assert.Equal(2 * perServer, all.Select(a => a.Id).Distinct().Count());
-        Assert.Equal((2 * perServer).ToString(), await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
+        Assert.Equal(writes, (await server.AllAsync()).Count);
+        var saved = await _store.NewServer().AllAsync();
+        Assert.Equal(writes, saved.Count);
+        Assert.Equal(writes, saved.Select(a => a.Id).Distinct().Count());
     }
 
     [Fact]
     public async Task Refused_change_writes_nothing()
     {
         var server = _store.NewServer();
-        var ad = Ads.Make();
-        await server.AddAsync(ad, default);
+        await server.AddAsync(Ads.Make(), default);
+        var before = await File.ReadAllTextAsync(_store.Folder.GetAdsFile());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             server.UpdateAsync(Ads.Make(), default)); // an id that isn't stored
         await Assert.ThrowsAsync<NotFoundException>(() =>
             server.DeleteAsync(Guid.NewGuid(), default));
 
-        Assert.Equal("1", await File.ReadAllTextAsync(_store.Folder.GetVersionFile()));
+        Assert.Equal(before, await File.ReadAllTextAsync(_store.Folder.GetAdsFile()));
     }
 
     [Fact]
-    public async Task Shared_lock_is_exclusive_and_times_out()
+    public async Task Second_writer_waits_for_the_first()
     {
-        var lockA = new SharedFileLock(_store.Folder, 2, 10);
-        var lockB = new SharedFileLock(_store.Folder, 2, 10);
-        Directory.CreateDirectory(_store.Folder.GetPath);
+        var gate = new GatedStore(new SharedFolderFileStore(_store.Folder));
+        var server = _store.NewServer(gate);
+        await server.AllAsync();
 
-        var held = await lockA.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
-        await Assert.ThrowsAsync<StorageBusyException>(() =>
-            lockB.LockShareAdsFile("ads", TimeSpan.FromMilliseconds(200), default));
-
-        await held.DisposeAsync();
-        await using var second = await lockB.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
-    }
-
-    [Fact]
-    public async Task Waiting_writer_gets_the_lock_once_it_is_released()
-    {
-        var server = _store.NewServer();
-        var outside = new SharedFileLock(_store.Folder, 2, 10);
-        var held = await outside.LockShareAdsFile("ads", TimeSpan.FromSeconds(1), default);
-
-        var write = server.AddAsync(Ads.Make("Waited"), default);
+        gate.Hold();
+        var first = server.AddAsync(Ads.Make("First"), default);
+        var second = server.AddAsync(Ads.Make("Second"), default);
         await Task.Delay(150);
-        Assert.False(write.IsCompleted); // blocked on the shared lock
+        Assert.False(first.IsCompleted);  // held inside the save
+        Assert.False(second.IsCompleted); // waiting for the lock
 
-        await held.DisposeAsync();
-        await write;
-        Assert.Single(await server.AllAsync());
+        gate.Release();
+        await Task.WhenAll(first, second);
+        Assert.Equal(2, (await _store.NewServer().AllAsync()).Count);
+    }
+
+    [Fact]
+    public async Task Writer_gives_up_with_busy_after_the_lock_timeout()
+    {
+        var gate = new GatedStore(new SharedFolderFileStore(_store.Folder));
+        var server = _store.NewServer(gate, new StorageOptions { LockTimeoutSeconds = 1 });
+        await server.AllAsync();
+
+        gate.Hold();
+        var first = server.AddAsync(Ads.Make("First"), default);
+        await Assert.ThrowsAsync<StorageBusyException>(() => server.AddAsync(Ads.Make("Too late"), default));
+
+        gate.Release();
+        await first;
+        Assert.Equal("First", Assert.Single(await server.AllAsync()).Title);
+    }
+
+    /// <summary>A file store whose saves can be held open, to keep the repository's lock taken.</summary>
+    private sealed class GatedStore(IFileStore inner) : IFileStore
+    {
+        private TaskCompletionSource _open = Open();
+
+        public void Hold() => _open = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        public void Release() => _open.TrySetResult();
+
+        public Task<List<Ad>> ReadAdsAsync(CancellationToken ct) => inner.ReadAdsAsync(ct);
+
+        public async Task WriteAdsAsync(IReadOnlyCollection<Ad> ads, CancellationToken ct)
+        {
+            await _open.Task;
+            await inner.WriteAdsAsync(ads, ct);
+        }
+
+        private static TaskCompletionSource Open()
+        {
+            var open = new TaskCompletionSource();
+            open.SetResult();
+            return open;
+        }
     }
 }

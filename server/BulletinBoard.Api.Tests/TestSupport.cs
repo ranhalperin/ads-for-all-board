@@ -6,19 +6,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BulletinBoard.Api.Tests;
 
-/// <summary>A throwaway store folder. Each repository made from it acts like a separate server.</summary>
+/// <summary>A throwaway store folder for repository tests.</summary>
 public sealed class TempStore : IDisposable
 {
     public StorageFolder Folder { get; } =
         new(Path.Combine(Path.GetTempPath(), "bulletin-board-tests", Guid.NewGuid().ToString("N")));
 
-    public StorageOptions Options { get; } = new() { LockTimeoutSeconds = 10, LockRetryMinMs = 2, LockRetryMaxMs = 15 };
+    public StorageOptions Options { get; } = new() { LockTimeoutSeconds = 10 };
 
-    /// <summary>A new repository with its own memory and local lock: "another server" on the same folder.</summary>
-    public JsonFileAdRepository NewServer() => new(
-        new SharedFolderFileStore(Folder),
-        new SharedFileLock(Folder, Options.LockRetryMinMs, Options.LockRetryMaxMs),
-        Options,
+    /// <summary>A new repository on this folder, with empty memory: like starting the API again.</summary>
+    public JsonFileAdRepository NewServer(IFileStore? store = null, StorageOptions? options = null) => new(
+        store ?? new SharedFolderFileStore(Folder),
+        options ?? Options,
         NullLogger<JsonFileAdRepository>.Instance);
 
     public void Dispose()

@@ -1,6 +1,5 @@
 ﻿// Generates N fake ads into a store folder, to check the API at scale (default 100,000).
-// Uses the API's own file store and shared lock, so it's safe to run while servers are up:
-// they see the new ads.version and reload on their next request.
+// Uses the API's own file store. Stop the API first: it reads ads.json once, when it starts.
 //
 //   dotnet run --project tools/BulletinBoard.DataGen -- [count] [folder]
 //   dotnet run --project tools/BulletinBoard.DataGen -- 100000 server/BulletinBoard.Api/data
@@ -49,14 +48,8 @@ for (var i = 0; i < count; i++)
 }
 
 var store = new SharedFolderFileStore(folder);
-var fileLock = new SharedFileLock(folder);
 var timer = Stopwatch.StartNew();
-await using (await fileLock.LockShareAdsFile("ads", TimeSpan.FromSeconds(30), CancellationToken.None))
-{
-    var version = await store.ReadVersionAsync(CancellationToken.None) ?? 0;
-    await store.WriteAdsAsync(ads, CancellationToken.None);
-    await store.WriteVersionAsync(version + 1, CancellationToken.None);
-}
+await store.WriteAdsAsync(ads, CancellationToken.None);
 
 var size = new FileInfo(folder.GetAdsFile()).Length;
 Console.WriteLine($"Wrote {count:N0} ads to {folder.GetAdsFile()} ({size / 1024.0 / 1024.0:N1} MB) in {timer.ElapsedMilliseconds:N0} ms");

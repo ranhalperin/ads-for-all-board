@@ -7,27 +7,25 @@ using BulletinBoard.Api.Repositories;
 namespace BulletinBoard.Api.Repositories.JsonFile;
 
 /// <summary>
-/// Ads in one JSON file, safe for several servers sharing the file's folder.
+/// Ads in one JSON file, for one API server: this process is the only one that reads or writes it.
 ///
-/// Writes:  local SemaphoreSlim (queues this server's requests) → shared file lock (one server at a time)
-///          → re-read if another server wrote → change → save ads.json (temp + rename) → bump ads.version.
-/// Reads:   served from an in-memory snapshot. Each read checks ads.version (a few bytes); only when another
-///          server has written since does this server reload ads.json.
+/// Reads:   served from an in-memory snapshot, loaded from ads.json on the first request.
+/// Writes:  SemaphoreSlim (one write at a time) → change a copy of the ads → save ads.json (temp + rename)
+///          → swap in the new snapshot.
 ///
-/// Must be registered as a singleton: one snapshot and one local lock per process.
+/// Must be registered as a singleton: one snapshot and one lock per process.
 /// </summary>
 public sealed class JsonFileAdRepository(
     IFileStore store,
-    IDistributedLock sharedLock,
     StorageOptions options,
     ILogger<JsonFileAdRepository> logger) : IAdRepository
 {
-    private readonly SemaphoreSlim _localLock = new(1, 1);
-    private volatile JsonFileSnapshot _snapshot = JsonFileSnapshot.NotLoaded;
+    private readonly SemaphoreSlim _lock = new(1, 1);
+    private volatile JsonFileSnapshot? _snapshot;
 
     public async Task<AdSearchPage> SearchAsync(AdSearch search, int page, int pageSize, CancellationToken ct)
     {
-        var matches = AdFilter.Apply((await GetSnapshotFileAsync(ct)).Ads, search);
+        var matches = AdFilter.Apply((await GetSnapshotAsync(ct)).Ads, search);
         var items = AdFilter.NewestFirst(matches)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -37,7 +35,7 @@ public sealed class JsonFileAdRepository(
 
     public async Task<AdPinsPage> GetPinsAsync(AdSearch search, int maxPins, CancellationToken ct)
     {
-        var matches = AdFilter.Apply((await GetSnapshotFileAsync(ct)).Ads, search);
+        var matches = AdFilter.Apply((await GetSnapshotAsync(ct)).Ads, search);
         // Sorting costs time, so only when we must choose which pins to leave out (newest win).
         IEnumerable<AdMatch> chosen = matches.Count > maxPins
             ? AdFilter.NewestFirst(matches).Take(maxPins)
@@ -46,112 +44,59 @@ public sealed class JsonFileAdRepository(
     }
 
     public async Task<Ad?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        (await GetSnapshotFileAsync(ct)).ById.GetValueOrDefault(id);
+        (await GetSnapshotAsync(ct)).ById.GetValueOrDefault(id);
 
     public Task AddAsync(Ad ad, CancellationToken ct) =>
-        UpdateJsonFileAsync(ads =>
-        {
-            ads.Add(ad);
-            return true;
-        }, ct);
+        UpdateJsonFileAsync(ads => ads.Add(ad), ct);
 
     public Task UpdateAsync(Ad ad, CancellationToken ct) =>
-        UpdateJsonFileAsync(ads =>
-        {
-            ads[IndexOf(ads, ad.Id)] = ad;
-            return true;
-        }, ct);
+        UpdateJsonFileAsync(ads => ads[IndexOf(ads, ad.Id)] = ad, ct);
 
     public Task DeleteAsync(Guid id, CancellationToken ct) =>
-        UpdateJsonFileAsync(ads =>
-        {
-            var index = IndexOf(ads, id);
-            ads.RemoveAt(index);
-            return true;
-        }, ct);
+        UpdateJsonFileAsync(ads => ads.RemoveAt(IndexOf(ads, id)), ct);
 
-    /// <summary>The current snapshot, reloading it first if another server has written since.</summary>
-    private async Task<JsonFileSnapshot> GetSnapshotFileAsync(CancellationToken ct)
+    /// <summary>The ads in memory, loading ads.json first if this is the first request.</summary>
+    private async Task<JsonFileSnapshot> GetSnapshotAsync(CancellationToken ct) =>
+        _snapshot ?? await WithLockAsync(() => LoadAsync(ct), ct);
+
+    /// <summary>Reads ads.json into the snapshot, once. Call only while holding the lock.</summary>
+    private async Task<JsonFileSnapshot> LoadAsync(CancellationToken ct)
     {
-        var current = _snapshot;
-        var fileVersion = await store.ReadVersionAsync(ct);
-
-        // Up to date, or the version file was caught mid-write (it'll be read again on the next request).
-        if (current.IsLoaded && (fileVersion is null || fileVersion == current.Version))
-            return current;
-
-        try
-        {
-            return await AtomicServersIOAction(() => ReloadAsync(ct), ct);
-        }
-        catch (StorageBusyException) when (current.IsLoaded)
-        {
-            // Writers are holding the file: a slightly older list is better than an error for a read.
-            logger.LogWarning("Lock busy while reloading; serving version {Version}", current.Version);
-            return current;
-        }
-    }
-
-    /// <summary>Reads ads.json into a new snapshot. Call only while holding both locks.</summary>
-    private async Task<JsonFileSnapshot> ReloadAsync(CancellationToken ct)
-    {
-        // Another request on this server may have reloaded while we waited for the lock.
-        var version = await store.ReadVersionAsync(ct) ?? 0;
-        if (_snapshot.IsLoaded && _snapshot.Version == version) return _snapshot;
+        // Another request may have loaded it while this one waited for the lock.
+        if (_snapshot is not null) return _snapshot;
 
         var started = Stopwatch.StartNew();
         var ads = await store.ReadAdsAsync(ct);
-        logger.LogInformation("Loaded {Count} ads (version {Version}) in {Ms} ms",
-            ads.Count, version, started.ElapsedMilliseconds);
-        _snapshot = new JsonFileSnapshot(version, ads);
+        logger.LogInformation("Loaded {Count} ads in {Ms} ms", ads.Count, started.ElapsedMilliseconds);
+        _snapshot = new JsonFileSnapshot(ads);
         return _snapshot;
     }
 
-    /// <summary>Takes both locks, then applies <paramref name="change"/> to the latest ads and saves them.</summary>
-    private Task<T> UpdateJsonFileAsync<T>(Func<List<Ad>, T> change, CancellationToken ct) =>
-        AtomicServersIOAction(() => ApplyAndSaveAsync(change, ct), ct);
+    /// <summary>Takes the lock, applies <paramref name="change"/> to a copy of the ads, saves them, then swaps the snapshot.</summary>
+    private Task UpdateJsonFileAsync(Action<List<Ad>> change, CancellationToken ct) =>
+        WithLockAsync(async () =>
+        {
+            var ads = new List<Ad>((await LoadAsync(ct)).Ads);
+            change(ads); // may throw (not found): nothing has been written yet
 
-    /// <summary>Read the latest ads → change them → save ads.json and ads.version. Call only while holding both locks.</summary>
-    private async Task<T> ApplyAndSaveAsync<T>(Func<List<Ad>, T> change, CancellationToken ct)
+            // From here on, finish the write even if the caller goes away, so the file and memory agree.
+            await store.WriteAdsAsync(ads, CancellationToken.None);
+            _snapshot = new JsonFileSnapshot(ads);
+            return true;
+        }, ct);
+
+    /// <summary>Runs <paramref name="action"/> holding the lock, giving up with 503 after Storage:LockTimeoutSeconds.</summary>
+    private async Task<T> WithLockAsync<T>(Func<Task<T>> action, CancellationToken ct)
     {
-        var version = await store.ReadVersionAsync(ct) ?? 0;
-
-        // Our snapshot is current only if no other server has written since we loaded it.
-        var ads = _snapshot.IsLoaded && _snapshot.Version == version
-            ? new List<Ad>(_snapshot.Ads)
-            : await store.ReadAdsAsync(ct);
-
-        var result = change(ads); // may throw (not found): nothing has been written yet
-
-        // From here on, finish the write even if the caller goes away, so the file and version agree.
-        var next = version + 1;
-        await store.WriteAdsAsync(ads, CancellationToken.None);
-        await store.WriteVersionAsync(next, CancellationToken.None);
-        _snapshot = new JsonFileSnapshot(next, ads);
-        return result;
-    }
-
-    /// <summary>Runs <paramref name="action"/> holding both locks, giving up after Storage:LockTimeoutSeconds.</summary>
-    private async Task<T> AtomicServersIOAction<T>(Func<Task<T>> action, CancellationToken ct)
-    {
-        var waited = Stopwatch.StartNew();
-        if (!await _localLock.WaitAsync(options.LockTimeout, ct)) // lock within the server before locking between servers
+        if (!await _lock.WaitAsync(options.LockTimeout, ct))
             throw new StorageBusyException();
         try
         {
-            var left = options.LockTimeout - waited.Elapsed;
-
-            // Lock between servers: ads.lock stays open (locked) for the whole block,
-            // and is closed (released) when the block ends, even if action() throws.
-            await using (var serversLock = await sharedLock.LockShareAdsFile(
-                             StorageFolder.LockKeyName, left > TimeSpan.Zero ? left : TimeSpan.Zero, ct))
-            {
-                return await action();
-            } // ← serversLock.DisposeAsync() runs here: ads.lock is released
+            return await action();
         }
         finally
         {
-            _localLock.Release();
+            _lock.Release();
         }
     }
 

@@ -6,7 +6,7 @@ using BulletinBoard.Api.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Storage: one folder (local, or a shared network mount) holding ads.json, ads.version and ads.lock.
+// Storage: one folder holding ads.json. One API server reads and writes it.
 var storage = builder.Configuration.GetSection("Storage").Get<StorageOptions>() ?? new StorageOptions();
 var contentRoot = builder.Environment.ContentRootPath;
 var folder = StorageFolder.Resolve(storage.FolderPath, contentRoot);
@@ -16,7 +16,6 @@ builder.Services.AddSingleton(storage);
 builder.Services.AddSingleton(folder);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IFileStore>(_ => new SharedFolderFileStore(folder, seedFile));
-builder.Services.AddSingleton<IDistributedLock>(_ => new SharedFileLock(folder, storage.LockRetryMinMs, storage.LockRetryMaxMs));
 // Singleton on purpose: one in-memory snapshot and one local lock for the whole process.
 builder.Services.AddSingleton<IAdRepository, JsonFileAdRepository>();
 builder.Services.AddScoped<IAdService, AdService>();

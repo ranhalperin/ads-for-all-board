@@ -30,7 +30,7 @@ The first run creates `server/BulletinBoard.Api/data/` from `SeedData/ads.json` 
 ### Tests
 
 ```bash
-dotnet test                       # API: 32 tests (filters, file store, two-server locking, HTTP)
+dotnet test                       # API: 30 tests (filters, file store, locking, HTTP)
 cd client && npm test             # client: query building, validation, address labels
 cd client && npm run typecheck
 ```
@@ -41,7 +41,7 @@ cd client && npm run typecheck
 dotnet run --project tools/BulletinBoard.DataGen -c Release -- 100000 server/BulletinBoard.Api/data
 ```
 
-It's safe to run while the API is up: it takes the same file lock, and the API reloads on its next request.
+Stop the API first: it reads `ads.json` once, when it starts.
 
 ## How it fits together
 
@@ -49,8 +49,8 @@ It's safe to run while the API is up: it takes the same file lock, and the API r
 React SPA (one screen)                     .NET 10 API                          data folder
 ┌──────────────────────────┐   /api/ads    ┌──────────────────────────┐        ┌──────────────┐
 │ filters │ list │ map │ ▢ │ ────────────► │ AdsController            │        │ ads.json     │ the ads
-│         │      │     │ panel (view /   │ │  → AdService (rules)     │ ─────► │ ads.version  │ a counter
-│         │      │     │ new / edit)     │ │  → JsonFileAdRepository  │        │ ads.lock     │ the lock
+│         │      │     │ panel (view /   │ │  → AdService (rules)     │ ─────► │              │
+│         │      │     │ new / edit)     │ │  → JsonFileAdRepository  │        │              │
 └──────────────────────────┘               └──────────────────────────┘        └──────────────┘
 ```
 
@@ -64,9 +64,9 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | `components/FiltersBar` | Title search (debounced), category, price from–to, distance (from the pinned place, or asks for your location the first time) |
 | `components/AdsList` | One page of results, with edit and delete on every ad |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan; a click pins your place |
-| `components/PlaceSearch` | The address box over the board map: pins your place for the distance filter, or removes the pin |
-| `components/AdPanel` / `AdDetails` / `AdForm` | View, create, edit, delete with confirmation |
-| `components/LocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
+| `components/MapPlaceSearch` | The address box over the board map: pins your place for the distance filter, or removes the pin |
+| `components/AdSidePanel` / `AdDetails` / `AdForm` | View, create, edit, delete with confirmation |
+| `components/AdLocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
 | `appText.ts` | Every user-visible string, so another language is one more object |
 
 Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API key is needed.
@@ -90,27 +90,26 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 +
 | `AdService` | Turns the query string into an `AdSearch` and the results into JSON; sets id / dates, trims text |
 | `JsonFileAdRepository` + `AdFilter` (`Repositories.JsonFile`; the contract `IAdRepository` and its search types stay in `Repositories`) | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
 | `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
-| `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
 
 **No accounts:** the board is open to everyone, as the assignment asks. Anyone can edit or delete any ad, in the UI and through the API; the server doesn't check who made it. A real deployment would add a login (JWT) and store the user id on each ad, or give each ad a secret edit token returned when it is created.
 
-## Keeping one JSON file consistent across servers
+## Keeping the JSON file consistent
 
-The store is designed for **several API instances sharing one folder**: a local folder in development, or a network share in the cloud (AWS EFS, Azure Files, Google Filestore, any NFS/SMB share, or a Kubernetes ReadWriteMany volume). Only `Storage:FolderPath` changes.
+The API runs as **one server**: it is the only process that reads or writes `ads.json`.
+
+**Reading:** the ads are loaded from `ads.json` on the first request and kept in memory as an immutable snapshot. Every search, map request and single-ad lookup is served from memory, with no file access.
 
 **Writing** (create / edit / delete):
 
-1. `SemaphoreSlim(1,1)`: queues this server's own requests in memory, without blocking threads (`WaitAsync`).
-2. `SharedFileLock`: opens `ads.lock` with `FileShare.None`. The OS, or the NFS/SMB file server, refuses a second exclusive open from any process on any machine. It retries with `await Task.Delay` plus jitter, and gives up with **503** after `LockTimeoutSeconds`. If a server dies while holding it, the OS closes the handle (on NFS, when its lease expires), so it can't stay locked the way a "marker file" lock can.
-3. Read `ads.version`. If another server wrote since this one loaded, re-read `ads.json`.
-4. Apply the change, on fresh data.
-5. Save `ads.json` to a temp file and rename it into place, so a crash never leaves half a file.
-6. Increment `ads.version`.
+1. `SemaphoreSlim(1,1)`: one write at a time. Other requests wait in a queue without blocking threads (`WaitAsync`), and give up with **503** after `LockTimeoutSeconds`.
+2. Apply the change to a copy of the ads. If it fails (for example, the ad is not found), nothing is written.
+3. Save `ads.json` to a temp file and rename it into place, so a crash never leaves half a file.
+4. Swap in the new snapshot in one step, so readers never see a half-applied change.
 
-**Reading:** every server keeps the ads in memory as an immutable snapshot. Each read opens `ads.version` (a few bytes). If it changed, the server reloads `ads.json`, so it sees another server's ad on its **next request**. Opening the file, and not just checking its timestamp, is what makes NFS return fresh contents (close-to-open consistency). `FileSystemWatcher` is not used, because it doesn't see changes made by other machines on a network share.
+`StorageTests` checks this: 50 concurrent writes are all kept, a second writer waits for the first, a writer gives up with 503 after the timeout, and a refused change leaves the file untouched.
 
-`StorageTests` checks this with two repository instances on one folder: a write on one is seen by the other, a write on a stale instance doesn't lose the other's ad, and 50 concurrent writes from two instances are all kept.
+**More than one server** would need a lock every server sees (for example, an exclusive lock file on the shared folder) and a way for each server to notice another server's write (for example, a version counter it checks before reading). A database is the simpler path there; see below.
 
 ## Size limits
 
@@ -120,24 +119,24 @@ Measured on a laptop with 100,000 generated ads (47.8 MB file):
 
 | Operation | Time |
 |---|---|
-| Reload after another writer (whole file) | ~0.8–1.2 s, once per change |
+| Load at the first request (whole file) | ~0.8–1.2 s, once |
 | Search / filters / distance (one page) | 20–100 ms |
 | Map pins for an area | ~35 ms |
 | Create / edit / delete (rewrites the whole file under the lock) | ~0.5 s |
 | 5 creates at once | queued: 0.4 s → 2.0 s, all saved |
 | API process memory | ~190 MB |
 
-The limit comes from the single file: every write rewrites it and every other server reloads it. Beyond ~100K:
+The limit comes from the single file: every write rewrites all of it. Beyond ~100K:
 
-- **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each with its own lock and version file, and keep only a slim index in memory (id, title, category, price, lat/lng, contact name, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
+- **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each written on its own, and keep only a slim index in memory (id, title, category, price, lat/lng, contact name, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
 - **Free choice:** a database (PostgreSQL + PostGIS, MongoDB with a geo index, DynamoDB). Only a new `IAdRepository` is needed: it turns the same `AdSearch` into a database query (`WHERE`, `ORDER BY created DESC LIMIT`, a geo index). The controller, service and client stay the same.
 
 ## Configuration (`appsettings.json`)
 
 | Key | Default | |
 |---|---|---|
-| `Storage:FolderPath` | `data` | Where the three files live (the shared mount in the cloud) |
+| `Storage:FolderPath` | `data` | The folder that holds `ads.json` |
 | `Storage:SeedFile` | `SeedData/ads.json` | Copied in when the folder is empty |
-| `Storage:LockTimeoutSeconds` | `15` | Wait for the lock before 503 |
+| `Storage:LockTimeoutSeconds` | `15` | How long a write waits for the lock before 503 |
 | `Storage:MaxPins` | `2000` | Most pins per map request |
 | `Cors:Origins` | `http://localhost:5273` | Only needed when the client is hosted on another origin |
