@@ -43,7 +43,7 @@ export function AdsList({ result, loading, error, filtered, selectedId, onSelect
               onClick={() => onSelect(ad)}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect(ad))}
             >
-              <Thumb ad={ad} />
+              <AdImage url={ad.imageUrl} label={ad.title} />
               <div className="row-body">
                 <div className="row-title">
                   <span className="title-text">{ad.title}</span>
@@ -77,9 +77,13 @@ export function AdsList({ result, loading, error, filtered, selectedId, onSelect
   )
 }
 
-function Thumb({ ad }: { ad: Ad }) {
-  if (ad.imageUrl) {
-    return <img className="thumb" src={ad.imageUrl} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+/**
+ * The small picture at the start of a row: the image at `url`, loaded by the browser straight from that
+ * address. With no url, a grey square with the label's first letter; a url that fails to load is hidden.
+ */
+function AdImage({ url, label }: { url?: string | null; label: string }) {
+  if (url) {
+    return <img className="thumb" src={url} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
   }
-  return <div className="thumb placeholder" aria-hidden="true">{ad.title.charAt(0).toUpperCase()}</div>
+  return <div className="thumb placeholder" aria-hidden="true">{label.charAt(0).toUpperCase()}</div>
 }
