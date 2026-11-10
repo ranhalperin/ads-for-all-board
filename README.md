@@ -43,6 +43,10 @@ dotnet run --project tools/BulletinBoard.DataGen -c Release -- 10000 server/Bull
 
 Stop the API first: it reads `ads.json` once, when it starts.
 
+## Assumptions
+
+**Every user can add, edit and delete any ad.** There are no accounts, so the server doesn't check who created an ad. In real life, users would need to register and sign in, and only the user who created an ad could edit or delete it. Other roles could be added too, such as an admin who can remove any ad. This can be discussed.
+
 ## Keeping the JSON file consistent
 
 The API is assumed to run as **one server**. It keeps the ads in memory and is the only process that reads or writes `ads.json`. Writes (create / edit / delete) go one at a time through a `SemaphoreSlim`. Each one saves the file through a temp file and a rename, so a crash never leaves half a file.
