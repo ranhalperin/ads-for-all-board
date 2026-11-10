@@ -35,6 +35,13 @@ export function AdPanel({ state, askDelete, onClose, onEdit, onSaved, onDeleted,
     return () => controller.abort()
   }, [viewId])
 
+  // On a phone the panel sits under the filters and the map, near the top of the page; the user may
+  // have opened it from far down the list, so bring the top into view. (The panel remounts per ad.)
+  const open = state.mode !== 'closed'
+  useEffect(() => {
+    if (open && window.matchMedia('(max-width: 900px)').matches) window.scrollTo({ top: 0 })
+  }, [open])
+
   // What was loaded belongs to this panel only if it's for the ad being shown now.
   const current = loaded && loaded.id === viewId ? loaded : null
   const ad = current?.ad ?? null

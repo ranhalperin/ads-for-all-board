@@ -126,7 +126,12 @@ path.me { fill: var(--accent); fill-opacity: 1; stroke: #fff; stroke-width: 3; }
 
 /* Panel */
 .panel { position: relative; overflow-y: auto; padding: 16px; background: var(--surface); border-inline-start: 1px solid var(--border); }
-.panel .close { position: absolute; top: 8px; right: 8px; z-index: 2; }
+/* Round and white so it stays visible over the ad's photo. */
+.panel .close {
+  position: absolute; top: 8px; inset-inline-end: 8px; z-index: 2;
+  width: 32px; height: 32px; padding: 0; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
 .details-image { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); margin-bottom: 10px; }
 .details-head { display: flex; gap: 6px; }
 .details-price { font-size: 1.2rem; font-weight: 600; margin: 0 0 8px; }
@@ -160,14 +165,24 @@ path.me { fill: var(--accent); fill-opacity: 1; stroke: #fff; stroke-width: 3; }
 .picker-map { height: 220px; border-radius: var(--radius); border: 1px solid var(--border); }
 .picked { margin: 0; font-size: 0.9rem; }
 
-/* Phone and narrow screens: stack list and map; the panel becomes a full-screen sheet. */
+/* Laptop and tablet: three columns would squeeze the map, so an open ad takes the list's place.
+   Closing the ad (✕) brings the list back; the filters and the map stay in view throughout. */
+@media (max-width: 1280px) {
+  .with-panel .main { grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); }
+  .with-panel .list { display: none; }
+  .with-panel .panel { order: -1; border-inline-start: none; border-inline-end: 1px solid var(--border); }
+  .place-search .hint { display: none; }
+}
+
+/* Phone: one column, the page scrolls. Filters on top, then the map, then the list or the open ad. */
 @media (max-width: 900px) {
   .app { height: auto; min-height: 100vh; }
   .main, .with-panel .main { display: flex; flex-direction: column; }
   .map-wrap { order: -1; height: 320px; }
+  .with-panel .map-wrap { height: 220px; }
   .list { border-inline-end: none; }
   .rows { overflow: visible; }
-  .panel { position: fixed; inset: 0; z-index: 1000; border: none; }
+  .with-panel .panel { overflow: visible; border: none; }
   .two { grid-template-columns: 1fr; }
   .price-range input { width: 76px; }
 }
