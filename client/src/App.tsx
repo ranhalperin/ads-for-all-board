@@ -7,7 +7,7 @@ import { AdsMap } from './components/AdsMap'
 import { reverseGeocode } from './api/geocoding'
 import { FiltersBar } from './components/FiltersBar'
 import { getCurrentLocation, locationErrorMessage } from './browserLocation'
-import { useDebounced } from './hooks'
+import { useDebounced } from './useDebounced'
 import { t } from './appText'
 import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type PagedResult, type PanelState, type PinsResult } from './types'
 
