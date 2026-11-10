@@ -4,11 +4,15 @@ import { errorMessage, isCanceled } from './api/http'
 import { AdPanel } from './components/AdPanel'
 import { AdsList } from './components/AdsList'
 import { AdsMap } from './components/AdsMap'
+import { reverseGeocode } from './api/geocoding'
 import { FiltersBar } from './components/FiltersBar'
 import { getCurrentLocation, locationErrorMessage } from './geo'
 import { useDebounced } from './hooks'
 import { t } from './strings'
 import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type PagedResult, type PanelState, type PinsResult } from './types'
+
+/** The distance a pinned place starts with, when no distance is chosen yet. */
+const PIN_RADIUS_KM = 10
 
 /**
  * The whole app on one screen: filters on top, the list and the map side by side,
@@ -17,7 +21,9 @@ import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type 
 export default function App() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [page, setPage] = useState(1)
+  // The centre of the distance filter: a place pinned on the map, or the browser's location.
   const [myLocation, setMyLocation] = useState<LatLng | null>(null)
+  const [placeLabel, setPlaceLabel] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [bounds, setBounds] = useState<Bounds | null>(null)
@@ -69,12 +75,43 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pinKey stands for pinParams
   }, [pinKey, refreshKey])
 
+  // A place set without its address (a map click, the browser's location): look the address up.
+  // The short wait lets a few quick clicks settle into one lookup (Nominatim allows ~1 a second).
+  useEffect(() => {
+    if (!myLocation || placeLabel !== null) return
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      reverseGeocode(myLocation, controller.signal)
+        .then((label) => label && setPlaceLabel(label))
+        .catch(() => {})
+    }, 600)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [myLocation, placeLabel])
+
   const updateFilters = useCallback((patch: Partial<Filters>) => {
     setFilters((f) => ({ ...f, ...patch }))
     setPage(1)
   }, [])
 
-  /** Picking a distance needs the user's location; ask for it the first time. "Any" turns the filter off. */
+  /** Pin your place (address search or map click): the distance filter measures from it. */
+  const placeAt = (point: LatLng, label: string | null) => {
+    setLocationError(null)
+    setMyLocation(point)
+    setPlaceLabel(label)
+    setFocus(point)
+    if (filters.radiusKm === null) updateFilters({ radiusKm: PIN_RADIUS_KM })
+  }
+
+  const clearPlace = () => {
+    setMyLocation(null)
+    setPlaceLabel(null)
+    updateFilters({ radiusKm: null })
+  }
+
+  /** Picking a distance needs a place: the pinned one, or else the browser's location (asked once). "Any" turns the filter off. */
   const changeDistance = async (km: number | null) => {
     setLocationError(null)
     if (km === null || myLocation) {
@@ -86,6 +123,7 @@ export default function App() {
     try {
       const here = await getCurrentLocation()
       setMyLocation(here)
+      setPlaceLabel(null)
       setFocus(here)
       updateFilters({ radiusKm: km })
     } catch (err) {
@@ -119,7 +157,7 @@ export default function App() {
         locationError={locationError}
         onChange={updateFilters}
         onDistance={(km) => void changeDistance(km)}
-        onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1); setLocationError(null) }}
+        onClear={() => { setFilters(DEFAULT_FILTERS); setPage(1); setLocationError(null); setMyLocation(null); setPlaceLabel(null) }}
       />
 
       <main className="main">
@@ -139,10 +177,13 @@ export default function App() {
           pins={pins}
           selectedId={selectedId}
           focus={focus}
-          myLocation={filters.radiusKm !== null ? myLocation : null}
+          place={myLocation}
+          placeLabel={placeLabel}
           radiusKm={filters.radiusKm}
           onSelect={(id) => openAd(id)}
           onBoundsChange={setBounds}
+          onPlace={placeAt}
+          onClearPlace={clearPlace}
         />
 
         <AdPanel

@@ -2,9 +2,9 @@
 
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 
-- Browse every ad, newest first. **Search by title**, and filter by **category**, **price from–to** and **distance** (within 1–100 km of your location).
+- Browse every ad, newest first. **Search by title**, and filter by **category**, **price from–to** and **distance** (within 1–100 km of a place you pin on the map, or of your location).
 - **Create, edit and delete** ads: the board is open to all, so anyone can change or remove any ad.
-- **Bonus:** every ad has a map location, set by address search, clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
+- **Bonus:** every ad has a map location, set by address search, clicking the map or dragging the pin. The board shows every ad on a map; search an address or click the map to pin your place, and the distance filter shows the ads near it.
 
 ![screen](docs/screen.jpg)
 
@@ -61,10 +61,11 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | Part | What it does |
 |---|---|
 | `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
-| `components/FiltersBar` | Title search (debounced), category, price from–to, distance (asks for your location the first time) |
+| `components/FiltersBar` | Title search (debounced), category, price from–to, distance (from the pinned place, or asks for your location the first time) |
 | `components/AdsList` | One page of results, with edit and delete on every ad |
-| `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
-| `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
+| `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan; a click pins your place |
+| `components/PlaceSearch` | The address box over the board map: pins your place for the distance filter, or removes the pin |
+| `components/AdPanel` / `AdDetails` / `AdForm` | View, create, edit, delete with confirmation |
 | `components/LocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
 | `strings.ts` | Every user-visible string, so another language is one more object |
 

@@ -6,19 +6,26 @@ import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
 import { ISRAEL_CENTER } from '../geo'
 import { t } from '../strings'
 import type { AdPin, Bounds, LatLng, PinsResult } from '../types'
+import { PlaceSearch } from './PlaceSearch'
 
 interface Props {
   pins: PinsResult | null
   selectedId: string | null
   focus: LatLng | null
-  myLocation: LatLng | null
+  place: LatLng | null // the centre of the distance filter: a pinned place or the browser's location
+  placeLabel: string | null
   radiusKm: number | null
   onSelect: (id: string) => void
   onBoundsChange: (bounds: Bounds) => void
+  onPlace: (point: LatLng, label: string | null) => void
+  onClearPlace: () => void
 }
 
-/** The map of every ad that matches the filters (within the visible area). */
-export function AdsMap({ pins, selectedId, focus, myLocation, radiusKm, onSelect, onBoundsChange }: Props) {
+/**
+ * The map of every ad that matches the filters (within the visible area). Searching an address
+ * or clicking the map pins your place, the centre the distance filter measures from.
+ */
+export function AdsMap({ pins, selectedId, focus, place, placeLabel, radiusKm, onSelect, onBoundsChange, onPlace, onClearPlace }: Props) {
   return (
     <div className="map-wrap">
       <MapContainer center={[ISRAEL_CENTER.lat, ISRAEL_CENTER.lng]} zoom={8} className="map" worldCopyJump>
@@ -26,22 +33,30 @@ export function AdsMap({ pins, selectedId, focus, myLocation, radiusKm, onSelect
         <AutoResize />
         <BoundsReporter onChange={onBoundsChange} />
         <FlyTo point={focus} />
+        <ClickToPlace onPlace={(point) => onPlace(point, null)} />
         <ClusterLayer pins={pins?.pins ?? EMPTY} selectedId={selectedId} onSelect={onSelect} />
-        {myLocation && (
+        {place && (
           <>
             {radiusKm && (
-              <Circle center={[myLocation.lat, myLocation.lng]} radius={radiusKm * 1000} pathOptions={{ className: 'radius' }} />
+              <Circle center={[place.lat, place.lng]} radius={radiusKm * 1000} pathOptions={{ className: 'radius' }} />
             )}
-            <CircleMarker center={[myLocation.lat, myLocation.lng]} radius={7} pathOptions={{ className: 'me' }} />
+            <CircleMarker center={[place.lat, place.lng]} radius={8} pathOptions={{ className: 'me' }} />
           </>
         )}
       </MapContainer>
+      <PlaceSearch pinned={place !== null} label={placeLabel} onPlace={onPlace} onClear={onClearPlace} />
       {pins?.truncated && <p className="map-note">{t.pinsTruncated(pins.pins.length, pins.total)}</p>}
     </div>
   )
 }
 
 const EMPTY: AdPin[] = []
+
+/** A click on the map (not on an ad's pin, which opens the ad) pins your place there. */
+function ClickToPlace({ onPlace }: { onPlace: (point: LatLng) => void }) {
+  useMapEvents({ click: (e) => onPlace({ lat: e.latlng.lat, lng: e.latlng.lng }) })
+  return null
+}
 
 function BoundsReporter({ onChange }: { onChange: (b: Bounds) => void }) {
   const map = useMapEvents({ moveend: () => report() })

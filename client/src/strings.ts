@@ -65,6 +65,9 @@ export const t = {
   addressSearchButton: 'Find',
   pickOnMap: 'Click the map or drag the pin to set the exact spot.',
   noAddressFound: 'No address found. Try another search.',
+  pinHint: 'Search an address or click the map to pin your place for the distance filter.',
+  pinnedPlace: 'Pinned place',
+  removePin: 'Remove',
   pinnedAt: 'Pinned at',
 
   errRequired: 'Required',

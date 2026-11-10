@@ -114,6 +114,15 @@ select.on { background: var(--accent-soft); border-color: var(--accent); color: 
 .pin-selected { background: var(--accent); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px var(--accent); }
 path.radius { fill: var(--accent); fill-opacity: 0.06; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; }
 path.me { fill: var(--accent); fill-opacity: 1; stroke: #fff; stroke-width: 3; }
+/* Over the map's top corner; z-index 1000 sits above Leaflet's own controls and below the phone panel. */
+.place-search {
+  position: absolute; top: 10px; inset-inline-end: 10px; z-index: 1000;
+  width: min(340px, calc(100% - 70px)); display: flex; flex-direction: column; gap: 6px;
+  padding: 8px; border-radius: var(--radius); background: var(--surface);
+  border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.place-search .hint, .place-search .field-error { margin: 0; }
+.place-pinned { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; font-size: 0.88rem; }
 
 /* Panel */
 .panel { position: relative; overflow-y: auto; padding: 16px; background: var(--surface); border-inline-start: 1px solid var(--border); }
