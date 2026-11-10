@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
-import { formatDate, formatPrice } from '../format'
+import { formatDate, formatPrice } from '../formatters'
 import { AutoResize } from '../map/AutoResize'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
 import { categoryLabel, t } from '../appText'

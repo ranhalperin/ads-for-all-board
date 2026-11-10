@@ -1,4 +1,4 @@
-import { formatPrice } from '../format'
+import { formatPrice } from '../formatters'
 import { categoryLabel, t } from '../appText'
 import type { Ad, PagedResult } from '../types'
 
