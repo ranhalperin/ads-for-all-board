@@ -35,10 +35,10 @@ cd client && npm test             # client: query building, validation, address 
 cd client && npm run typecheck
 ```
 
-### Load 100,000 ads
+### Load 10,000 ads
 
 ```bash
-dotnet run --project tools/BulletinBoard.DataGen -c Release -- 100000 server/BulletinBoard.Api/data
+dotnet run --project tools/BulletinBoard.DataGen -c Release -- 10000 server/BulletinBoard.Api/data
 ```
 
 Stop the API first: it reads `ads.json` once, when it starts.
