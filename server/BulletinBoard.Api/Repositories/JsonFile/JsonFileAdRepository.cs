@@ -15,7 +15,7 @@ namespace BulletinBoard.Api.Repositories.JsonFile;
 ///
 /// Must be registered as a singleton: one snapshot and one lock per process.
 /// </summary>
-public sealed class JsonFileAdRepository(
+public class JsonFileAdRepository(
     IFileStore store,
     StorageOptions options,
     ILogger<JsonFileAdRepository> logger) : IAdRepository
