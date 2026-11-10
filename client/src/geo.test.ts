@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { locationErrorMessage } from './geo'
-import { t } from './strings'
+import { t } from './appText'
 
 describe('locationErrorMessage', () => {
   it('names the reason the browser gave', () => {

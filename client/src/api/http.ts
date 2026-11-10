@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { t } from '../strings'
+import { t } from '../appText'
 
 /** One axios client for the API. */
 export const http = axios.create({ baseURL: '/api', timeout: 30_000 })

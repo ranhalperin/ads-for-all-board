@@ -1,4 +1,4 @@
-import { t } from './strings'
+import { t } from './appText'
 import type { Ad, AdRequest, Category, LatLng } from './types'
 
 /** The form's values. Text inputs stay strings; the location is set by the map. */

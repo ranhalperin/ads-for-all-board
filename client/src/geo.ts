@@ -1,4 +1,4 @@
-import { t } from './strings'
+import { t } from './appText'
 import type { LatLng } from './types'
 
 /** The browser's current position, or an error if the user refuses or it's unavailable. */

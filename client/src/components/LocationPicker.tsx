@@ -5,7 +5,7 @@ import { reverseGeocode, searchAddress, type Place } from '../api/geocoding'
 import { ISRAEL_CENTER } from '../geo'
 import { AutoResize } from '../map/AutoResize'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
-import { t } from '../strings'
+import { t } from '../appText'
 import type { LatLng } from '../types'
 
 interface Props {

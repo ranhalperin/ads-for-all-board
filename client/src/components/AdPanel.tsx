@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { deleteAd, getAd } from '../api/ads'
 import { errorMessage, isCanceled, isNotFound } from '../api/http'
-import { t } from '../strings'
+import { t } from '../appText'
 import type { Ad, PanelState } from '../types'
 import { AdDetails } from './AdDetails'
 import { AdForm } from './AdForm'

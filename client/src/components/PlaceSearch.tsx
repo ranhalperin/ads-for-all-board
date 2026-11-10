@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { searchAddress, type Place } from '../api/geocoding'
-import { t } from '../strings'
+import { t } from '../appText'
 import type { LatLng } from '../types'
 
 interface Props {

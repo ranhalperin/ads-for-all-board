@@ -4,7 +4,7 @@ import { AutoResize } from '../map/AutoResize'
 import { ClusterLayer } from '../map/ClusterLayer'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
 import { ISRAEL_CENTER } from '../geo'
-import { t } from '../strings'
+import { t } from '../appText'
 import type { AdPin, Bounds, LatLng, PinsResult } from '../types'
 import { PlaceSearch } from './PlaceSearch'
 

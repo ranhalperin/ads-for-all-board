@@ -3,7 +3,7 @@ import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { formatDate, formatPrice } from '../format'
 import { AutoResize } from '../map/AutoResize'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
-import { categoryLabel, t } from '../strings'
+import { categoryLabel, t } from '../appText'
 import type { Ad } from '../types'
 
 interface Props {

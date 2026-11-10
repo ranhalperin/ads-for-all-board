@@ -1,4 +1,4 @@
-import { t } from './strings'
+import { t } from './appText'
 
 const shekel = new Intl.NumberFormat('en-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 })
 const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })

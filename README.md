@@ -67,7 +67,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | `components/PlaceSearch` | The address box over the board map: pins your place for the distance filter, or removes the pin |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View, create, edit, delete with confirmation |
 | `components/LocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
-| `strings.ts` | Every user-visible string, so another language is one more object |
+| `appText.ts` | Every user-visible string, so another language is one more object |
 
 Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API key is needed.
 

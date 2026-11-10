@@ -1,5 +1,5 @@
 import { formatPrice } from '../format'
-import { categoryLabel, t } from '../strings'
+import { categoryLabel, t } from '../appText'
 import type { Ad, PagedResult } from '../types'
 
 interface Props {

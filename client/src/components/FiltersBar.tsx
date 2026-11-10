@@ -1,4 +1,4 @@
-import { categoryLabel, t } from '../strings'
+import { categoryLabel, t } from '../appText'
 import { CATEGORIES, DISTANCES_KM, type Filters } from '../types'
 
 interface Props {

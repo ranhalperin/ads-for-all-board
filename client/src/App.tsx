@@ -8,7 +8,7 @@ import { reverseGeocode } from './api/geocoding'
 import { FiltersBar } from './components/FiltersBar'
 import { getCurrentLocation, locationErrorMessage } from './geo'
 import { useDebounced } from './hooks'
-import { t } from './strings'
+import { t } from './appText'
 import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type PagedResult, type PanelState, type PinsResult } from './types'
 
 /** The distance a pinned place starts with, when no distance is chosen yet. */
