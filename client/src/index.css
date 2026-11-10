@@ -8,8 +8,6 @@
   --accent-soft: #e8efff;
   --danger: #c62828;
   --danger-soft: #fdecec;
-  --mine: #0f766e;
-  --mine-soft: #e2f5f2;
   --radius: 8px;
   --header-h: 56px;
   color-scheme: light;
@@ -98,7 +96,6 @@ select.on { background: var(--accent-soft); border-color: var(--accent); color: 
 .row-address { font-size: 0.85rem; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-actions { display: flex; flex-direction: column; }
 .badge { font-size: 0.75rem; padding: 1px 7px; border-radius: 999px; background: #eef0f3; color: var(--muted); white-space: nowrap; }
-.badge.mine { background: var(--mine-soft); color: var(--mine); }
 .pager { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 0.9rem; }
 .empty { padding: 28px 16px; text-align: center; color: var(--muted); }
 .empty strong { color: var(--text); }

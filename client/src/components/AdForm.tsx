@@ -8,13 +8,12 @@ import { LocationPicker } from './LocationPicker'
 
 interface Props {
   ad: Ad | null // null = new ad
-  defaultName: string // prefills the contact name of a new ad
   onSaved: (ad: Ad) => void
   onCancel: () => void
 }
 
-export function AdForm({ ad, defaultName, onSaved, onCancel }: Props) {
-  const [values, setValues] = useState<AdFormValues>(() => (ad ? formFromAd(ad) : { ...EMPTY_FORM, contactName: defaultName }))
+export function AdForm({ ad, onSaved, onCancel }: Props) {
+  const [values, setValues] = useState<AdFormValues>(() => (ad ? formFromAd(ad) : EMPTY_FORM))
   const [errors, setErrors] = useState<FormErrors>({})
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)

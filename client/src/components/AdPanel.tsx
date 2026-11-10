@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { deleteAd, getAd } from '../api/ads'
 import { errorMessage, isCanceled, isNotFound } from '../api/http'
-import { isMine } from '../myName'
 import { t } from '../strings'
 import type { Ad, PanelState } from '../types'
 import { AdDetails } from './AdDetails'
@@ -10,7 +9,6 @@ import { AdForm } from './AdForm'
 interface Props {
   state: PanelState
   askDelete: boolean
-  myName: string
   onClose: () => void
   onEdit: (ad: Ad) => void
   onSaved: (ad: Ad) => void
@@ -19,7 +17,7 @@ interface Props {
 }
 
 /** The side panel: shows an ad, or the form to create / edit one. */
-export function AdPanel({ state, askDelete, myName, onClose, onEdit, onSaved, onDeleted, onAskDelete }: Props) {
+export function AdPanel({ state, askDelete, onClose, onEdit, onSaved, onDeleted, onAskDelete }: Props) {
   const [loaded, setLoaded] = useState<{ id: string; ad?: Ad; error?: string } | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -61,8 +59,8 @@ export function AdPanel({ state, askDelete, myName, onClose, onEdit, onSaved, on
     <aside className="panel" aria-label="Ad">
       <button type="button" className="icon close" onClick={onClose} aria-label={t.close} title={t.close}>✕</button>
 
-      {state.mode === 'new' && <AdForm key="new" ad={null} defaultName={myName} onSaved={onSaved} onCancel={onClose} />}
-      {state.mode === 'edit' && <AdForm key={state.ad.id} ad={state.ad} defaultName={myName} onSaved={onSaved} onCancel={onClose} />}
+      {state.mode === 'new' && <AdForm key="new" ad={null} onSaved={onSaved} onCancel={onClose} />}
+      {state.mode === 'edit' && <AdForm key={state.ad.id} ad={state.ad} onSaved={onSaved} onCancel={onClose} />}
 
       {state.mode === 'view' && (
         <>
@@ -71,7 +69,6 @@ export function AdPanel({ state, askDelete, myName, onClose, onEdit, onSaved, on
           {ad && (
             <AdDetails
               ad={ad}
-              mine={isMine(ad, myName)}
               confirmDelete={askDelete}
               deleting={deleting}
               onEdit={() => onEdit(ad)}

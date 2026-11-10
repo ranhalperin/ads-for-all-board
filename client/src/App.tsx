@@ -7,7 +7,6 @@ import { AdsMap } from './components/AdsMap'
 import { FiltersBar } from './components/FiltersBar'
 import { getCurrentLocation, locationErrorMessage } from './geo'
 import { useDebounced } from './hooks'
-import { loadMyName, saveMyName } from './myName'
 import { t } from './strings'
 import { DEFAULT_FILTERS, type Ad, type Bounds, type Filters, type LatLng, type PagedResult, type PanelState, type PinsResult } from './types'
 
@@ -19,7 +18,6 @@ export default function App() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [page, setPage] = useState(1)
   const [myLocation, setMyLocation] = useState<LatLng | null>(null)
-  const [myName, setMyName] = useState(loadMyName)
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [bounds, setBounds] = useState<Bounds | null>(null)
@@ -76,12 +74,6 @@ export default function App() {
     setPage(1)
   }, [])
 
-  /** The contact name of your last saved ad marks your ads; it's remembered in this browser. */
-  const changeMyName = (name: string) => {
-    setMyName(name)
-    saveMyName(name)
-  }
-
   /** Picking a distance needs the user's location; ask for it the first time. "Any" turns the filter off. */
   const changeDistance = async (km: number | null) => {
     setLocationError(null)
@@ -137,7 +129,6 @@ export default function App() {
           error={error}
           filtered={filtered}
           selectedId={selectedId}
-          myName={myName}
           onSelect={(ad) => openAd(ad.id, { lat: ad.latitude, lng: ad.longitude })}
           onEdit={(ad) => setPanel({ mode: 'edit', ad })}
           onDelete={(ad) => { openAd(ad.id, { lat: ad.latitude, lng: ad.longitude }); setAskDelete(true) }}
@@ -158,11 +149,9 @@ export default function App() {
           key={selectedId ?? panel.mode}
           state={panel}
           askDelete={askDelete}
-          myName={myName}
           onClose={() => setPanel({ mode: 'closed' })}
           onEdit={(ad) => setPanel({ mode: 'edit', ad })}
           onSaved={(ad) => {
-            changeMyName(ad.contactName) // the name you post under marks your ads
             openAd(ad.id, { lat: ad.latitude, lng: ad.longitude })
             setRefreshKey((k) => k + 1)
           }}

@@ -38,7 +38,6 @@ export const t = {
   saving: 'Saving…',
   deleteConfirm: 'Delete this ad? This can’t be undone.',
   deleteYes: 'Delete ad',
-  yours: 'Your ad',
   posted: (date: string) => `Posted ${date}`,
   edited: (date: string) => `edited ${date}`,
   contact: 'Contact',

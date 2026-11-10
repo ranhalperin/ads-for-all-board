@@ -3,7 +3,7 @@
 A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** that keeps the ads in a **local JSON file**.
 
 - Browse every ad, newest first. **Search by title**, and filter by **category**, **price from–to** and **distance** (within 1–100 km of your location).
-- **Create, edit and delete** your own ads: the ones posted under your contact name.
+- **Create, edit and delete** ads: the board is open to all, so anyone can change or remove any ad.
 - **Bonus:** every ad has a map location, set by address search, clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
 
 ![screen](docs/screen.jpg)
@@ -62,7 +62,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 |---|---|
 | `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
 | `components/FiltersBar` | Title search (debounced), category, price from–to, distance (asks for your location the first time) |
-| `components/AdsList` | One page of results, with edit and delete on your own ads |
+| `components/AdsList` | One page of results, with edit and delete on every ad |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
 | `components/LocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
@@ -92,7 +92,7 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 +
 | `SharedFileLock` (`IDistributedLock`) | The lock every server sees |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
 
-**Your ads without accounts:** the contact name is the identity. The browser remembers the name of the last ad you saved (localStorage); ads with that contact name (whole name, ignoring case) get a "Your ad" badge and Edit / Delete, and a new ad starts with that name filled in. The server itself doesn't check who edits or deletes: this keeps the board simple, but anyone who uses the same name, or calls the API directly, can change those ads. A real deployment would add a login (JWT) and store the user id on each ad.
+**No accounts:** the board is open to everyone, as the assignment asks. Anyone can edit or delete any ad, in the UI and through the API; the server doesn't check who made it. A real deployment would add a login (JWT) and store the user id on each ad, or give each ad a secret edit token returned when it is created.
 
 ## Keeping one JSON file consistent across servers
 

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BulletinBoard.Api.Controllers;
 
-/// <summary>CRUD for ads. There are no accounts: an ad's contact name is how its author finds it again.</summary>
+/// <summary>CRUD for ads. There are no accounts: the board is open to all, so anyone can edit or delete any ad.</summary>
 [ApiController]
 [Route("api/ads")]
 [Produces("application/json")]
