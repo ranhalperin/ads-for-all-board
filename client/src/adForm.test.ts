@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { shortLabel } from './api/geocoding'
-import { EMPTY_FORM, toRequest, validateAd, type AdFormValues } from './validation'
+import { EMPTY_FORM, toRequest, validateAd, type AdFormValues } from './adForm'
 
 const valid: AdFormValues = {
   ...EMPTY_FORM,

@@ -3,7 +3,7 @@ import { createAd, updateAd } from '../api/ads'
 import { errorMessage, fieldErrors } from '../api/http'
 import { categoryLabel, t } from '../appText'
 import { CATEGORIES, type Ad, type Category } from '../types'
-import { EMPTY_FORM, formFromAd, toRequest, validateAd, type AdFormValues, type FormErrors } from '../validation'
+import { EMPTY_FORM, formFromAd, toRequest, validateAd, type AdFormValues, type FormErrors } from '../adForm'
 import { LocationPicker } from './LocationPicker'
 
 interface Props {

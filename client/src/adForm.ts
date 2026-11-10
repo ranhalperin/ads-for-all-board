@@ -1,3 +1,4 @@
+/** The ad form's data and checks: its values, its starting values, the validation rules, and the conversion to the API's request. */
 import { t } from './appText'
 import type { Ad, AdRequest, Category, LatLng } from './types'
 
