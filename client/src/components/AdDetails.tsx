@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { formatDate, formatPrice } from '../format'
-import { googleMapsUrl, wazeUrl } from '../geo'
 import { AutoResize } from '../map/AutoResize'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
 import { categoryLabel, t } from '../strings'
@@ -46,10 +45,6 @@ export function AdDetails({ ad, mine, confirmDelete, deleting, onEdit, onAskDele
         <Marker position={[point.lat, point.lng]} />
       </MapContainer>
       {ad.address && <p className="muted">📍 {ad.address}{ad.distanceKm != null && ` · ${t.kmAway(ad.distanceKm)}`}</p>}
-      <div className="links">
-        <a href={googleMapsUrl(point)} target="_blank" rel="noreferrer">↗ {t.openInGoogleMaps}</a>
-        <a href={wazeUrl(point)} target="_blank" rel="noreferrer">↗ {t.openInWaze}</a>
-      </div>
 
       <p className="muted small">
         {t.posted(formatDate(ad.createdAt))}

@@ -42,8 +42,6 @@ export const t = {
   posted: (date: string) => `Posted ${date}`,
   edited: (date: string) => `edited ${date}`,
   contact: 'Contact',
-  openInGoogleMaps: 'Google Maps',
-  openInWaze: 'Waze',
   adNotFound: 'This ad no longer exists.',
 
   newAdTitle: 'New ad',

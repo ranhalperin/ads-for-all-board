@@ -129,7 +129,6 @@ path.me { fill: var(--accent); fill-opacity: 1; stroke: #fff; stroke-width: 3; }
 .details-contact dt { color: var(--muted); }
 .details-contact dd { margin: 0; }
 .details-map { height: 170px; border-radius: var(--radius); margin-block: 8px 4px; }
-.links { display: flex; gap: 16px; margin: 6px 0 10px; }
 .confirm { margin-top: 12px; padding: 12px; border-radius: var(--radius); background: var(--danger-soft); }
 .confirm p { margin: 0 0 8px; color: var(--danger); }
 

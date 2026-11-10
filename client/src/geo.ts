@@ -16,6 +16,3 @@ export function getCurrentLocation(): Promise<LatLng> {
 }
 
 export const ISRAEL_CENTER: LatLng = { lat: 31.6, lng: 34.95 }
-
-export const googleMapsUrl = (p: LatLng) => `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`
-export const wazeUrl = (p: LatLng) => `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`
