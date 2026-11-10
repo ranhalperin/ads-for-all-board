@@ -4,7 +4,7 @@ A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** t
 
 - Browse every ad, newest first. **Search by title**, and filter by **category**, **price from–to** and **distance** (within 1–100 km of your location).
 - **Create, edit and delete** your own ads: the ones posted under your contact name.
-- **Bonus:** every ad has a map location, set by address search, "use my location", clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
+- **Bonus:** every ad has a map location, set by address search, clicking the map or dragging the pin. The board shows every ad on a map and the distance filter shows the ads near you.
 
 ![screen](docs/screen.jpg)
 
@@ -65,7 +65,7 @@ React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads li
 | `components/AdsList` | One page of results, with edit and delete on your own ads |
 | `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan |
 | `components/AdPanel` / `AdDetails` / `AdForm` | View (with Google Maps / Waze links), create, edit, delete with confirmation |
-| `components/LocationPicker` | Address search (Nominatim), use my location, click to place, drag to adjust; the address is looked up from the pin |
+| `components/LocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
 | `strings.ts` | Every user-visible string, so another language is one more object |
 
 Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API key is needed.

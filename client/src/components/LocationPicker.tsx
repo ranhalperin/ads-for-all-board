@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import type { LeafletEventHandlerFnMap, Marker as LeafletMarker } from 'leaflet'
 import { reverseGeocode, searchAddress, type Place } from '../api/geocoding'
-import { getCurrentLocation, ISRAEL_CENTER } from '../geo'
+import { ISRAEL_CENTER } from '../geo'
 import { AutoResize } from '../map/AutoResize'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
 import { t } from '../strings'
@@ -17,7 +17,7 @@ interface Props {
 }
 
 /**
- * Picks the ad's location: search an address, use the browser's location, click the map, or drag the pin.
+ * Picks the ad's location: search an address, click the map, or drag the pin.
  * After the pin settles, the address is looked up from it (Nominatim allows ~1 request a second).
  */
 export function LocationPicker({ value, address, error, onChange, onAddress }: Props) {
@@ -71,18 +71,6 @@ export function LocationPicker({ value, address, error, onChange, onAddress }: P
     moveTo({ lat: place.lat, lng: place.lng }, place.label, false)
   }
 
-  const locateMe = async () => {
-    setBusy(true)
-    setMessage(null)
-    try {
-      moveTo(await getCurrentLocation(), null, true)
-    } catch {
-      setMessage(t.errLocationDenied)
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <div className={error ? 'picker invalid' : 'picker'}>
       <div className="picker-search">
@@ -100,7 +88,6 @@ export function LocationPicker({ value, address, error, onChange, onAddress }: P
           }}
         />
         <button type="button" onClick={() => void search()} disabled={busy}>{t.addressSearchButton}</button>
-        <button type="button" onClick={() => void locateMe()} disabled={busy} title={t.useMyLocation}>◎ {t.useMyLocation}</button>
       </div>
 
       {results && results.length > 1 && (

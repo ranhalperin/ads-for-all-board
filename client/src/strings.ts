@@ -64,7 +64,6 @@ export const t = {
 
   addressSearch: 'Search an address',
   addressSearchButton: 'Find',
-  useMyLocation: 'Use my location',
   pickOnMap: 'Click the map or drag the pin to set the exact spot.',
   noAddressFound: 'No address found. Try another search.',
   pinnedAt: 'Pinned at',
