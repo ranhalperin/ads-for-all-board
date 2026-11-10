@@ -49,26 +49,6 @@ The API is assumed to run as **one server**. It keeps the ads in memory and is t
 
 If more than one server is needed, the servers would also need a lock between them, and a way to notice each other's writes. This can be discussed.
 
-## Size limits
-
-Sized for **up to about 100,000 ads**. There is no hard limit: past that, every write and every reload just gets slower (see below).
-
-Measured on a laptop with 100,000 generated ads (47.8 MB file):
-
-| Operation | Time |
-|---|---|
-| Load at the first request (whole file) | ~0.8–1.2 s, once |
-| Search / filters / distance (one page) | 20–100 ms |
-| Map pins for an area | ~35 ms |
-| Create / edit / delete (rewrites the whole file under the lock) | ~0.5 s |
-| 5 creates at once | queued: 0.4 s → 2.0 s, all saved |
-| API process memory | ~190 MB |
-
-The limit comes from the single file: every write rewrites all of it. Beyond ~100K:
-
-- **Must stay JSON:** split into shards (for example by map area: `32.0_34.7.jsonl`), each written on its own, and keep only a slim index in memory (id, title, category, price, lat/lng, contact name, date). That's about 150–200 bytes per ad, roughly 200 MB for 1M ads, and full ads are read only for the page being shown.
-- **Free choice:** a database (PostgreSQL + PostGIS, MongoDB with a geo index, DynamoDB). Only a new `IAdRepository` is needed: it turns the same `AdSearch` into a database query (`WHERE`, `ORDER BY created DESC LIMIT`, a geo index). The controller, service and client stay the same.
-
 ## Configuration (`appsettings.json`)
 
 | Key | Default | |
