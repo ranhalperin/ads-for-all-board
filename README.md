@@ -43,73 +43,11 @@ dotnet run --project tools/BulletinBoard.DataGen -c Release -- 10000 server/Bull
 
 Stop the API first: it reads `ads.json` once, when it starts.
 
-## How it fits together
-
-```
-React SPA (one screen)                     .NET 10 API                          data folder
-┌──────────────────────────┐   /api/ads    ┌──────────────────────────┐        ┌──────────────┐
-│ filters │ list │ map │ ▢ │ ────────────► │ AdsController            │        │ ads.json     │ the ads
-│         │      │     │ panel (view /   │ │  → AdService (rules)     │ ─────► │              │
-│         │      │     │ new / edit)     │ │  → JsonFileAdRepository  │        │              │
-└──────────────────────────┘               └──────────────────────────┘        └──────────────┘
-```
-
-### Client (`client/`)
-
-React 19 + TypeScript + Vite. One screen, no router: the filters bar, the ads list (one page of 7), the map, and a side panel that shows an ad or the create/edit form. Nothing reloads the page.
-
-| Part | What it does |
-|---|---|
-| `App.tsx` | Holds the filters, page, selection and panel state; fetches the list and the map pins |
-| `components/FiltersBar` | Title search (debounced), category, price from–to, distance (from the pinned place, or asks for your location the first time) |
-| `components/AdsList` | One page of results, with edit and delete on every ad |
-| `components/AdsMap` | Leaflet + OpenStreetMap; pins merge into numbered clusters; re-queries as you pan; a click pins your place |
-| `components/MapPlaceSearch` | The address box over the board map: pins your place for the distance filter, or removes the pin |
-| `components/AdSidePanel` / `AdDetails` / `AdForm` | View, create, edit, delete with confirmation |
-| `components/AdLocationPicker` | Address search (Nominatim), click to place, drag to adjust; the address is looked up from the pin |
-| `appText.ts` | Every user-visible string, so another language is one more object |
-
-Maps use **Leaflet + OpenStreetMap tiles + Nominatim** address search, so no API key is needed.
-
-### API (`server/BulletinBoard.Api/`)
-
-| Endpoint | |
-|---|---|
-| `GET /api/ads?search=&category=&minPrice=&maxPrice=&lat=&lng=&radiusKm=&page=&pageSize=` | Search, newest first: one page plus the total |
-| `GET /api/ads/pins?<same filters>&north=&south=&east=&west=` | Light pins for the map area in view (id, title, category, lat, lng), capped at 2,000 |
-| `GET /api/ads/{id}` | One ad |
-| `POST /api/ads` | Create (201 + Location) |
-| `PUT /api/ads/{id}` | Edit an ad |
-| `DELETE /api/ads/{id}` | Delete an ad (204) |
-
-Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 + `Retry-After` when the file is busy. A 500 never exposes internals.
-
-| Class | Role |
-|---|---|
-| `AdsController` | HTTP only: binds the request, calls the service |
-| `AdService` | Turns the query string into an `AdSearch` and the results into JSON; sets id / dates, trims text |
-| `JsonFileAdRepository` + `AdFilter` (`Repositories.JsonFile`; the contract `IAdRepository` and its search types stay in `Repositories`) | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
-| `JsonFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
-| `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
-
-**No accounts:** the board is open to everyone, as the assignment asks. Anyone can edit or delete any ad, in the UI and through the API; the server doesn't check who made it. A real deployment would add a login (JWT) and store the user id on each ad, or give each ad a secret edit token returned when it is created.
-
 ## Keeping the JSON file consistent
 
-The API runs as **one server**: it is the only process that reads or writes `ads.json`.
+The API is assumed to run as **one server**. It keeps the ads in memory and is the only process that reads or writes `ads.json`. Writes (create / edit / delete) go one at a time through a `SemaphoreSlim`. Each one saves the file through a temp file and a rename, so a crash never leaves half a file.
 
-**Reading:** the ads are loaded from `ads.json` on the first request and kept in memory as an immutable snapshot. Every search, map request and single-ad lookup is served from memory, with no file access.
-
-**Writing** (create / edit / delete):
-
-1. `SemaphoreSlim(1,1)`: one write at a time. Other requests wait in a queue without blocking threads (`WaitAsync`), and give up with **503** after `LockTimeoutSeconds`.
-2. Apply the change to a copy of the ads. If it fails (for example, the ad is not found), nothing is written.
-3. Save `ads.json` to a temp file and rename it into place, so a crash never leaves half a file.
-4. Swap in the new snapshot in one step, so readers never see a half-applied change.
-
-`StorageTests` checks this: 50 concurrent writes are all kept, a second writer waits for the first, a writer gives up with 503 after the timeout, and a refused change leaves the file untouched.
-
-**More than one server** would need a lock every server sees (for example, an exclusive lock file on the shared folder) and a way for each server to notice another server's write (for example, a version counter it checks before reading). A database is the simpler path there; see below.
+If more than one server is needed, the servers would also need a lock between them, and a way to notice each other's writes. This can be discussed.
 
 ## Size limits
 
