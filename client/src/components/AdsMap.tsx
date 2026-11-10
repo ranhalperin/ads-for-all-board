@@ -3,7 +3,7 @@ import { Circle, CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } f
 import { AutoResize } from '../map/AutoResize'
 import { ClusterLayer } from '../map/ClusterLayer'
 import { TILE_ATTRIBUTION, TILE_URL } from '../map/leaflet'
-import { ISRAEL_CENTER } from '../geo'
+import { ISRAEL_CENTER } from '../browserLocation'
 import { t } from '../appText'
 import type { AdPin, Bounds, LatLng, PinsResult } from '../types'
 import { PlaceSearch } from './PlaceSearch'
