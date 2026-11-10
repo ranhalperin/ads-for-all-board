@@ -8,6 +8,10 @@ A single-page bulletin board: a **React** SPA on top of a **.NET 10 REST API** t
 
 ![screen](docs/screen.jpg)
 
+## Assumptions
+
+**Every user can add, edit and delete any ad.** There are no accounts, so the server doesn't check who created an ad. In real life, users would need to register and sign in, and only the user who created an ad could edit or delete it. Other roles could be added too, such as an admin who can remove any ad. This can be discussed.
+
 ## Run it
 
 Prerequisites: [.NET 10 SDK](https://dotnet.microsoft.com/download) and [Node.js 20+](https://nodejs.org).
@@ -42,10 +46,6 @@ dotnet run --project tools/BulletinBoard.DataGen -c Release -- 10000 server/Bull
 ```
 
 Stop the API first: it reads `ads.json` once, when it starts.
-
-## Assumptions
-
-**Every user can add, edit and delete any ad.** There are no accounts, so the server doesn't check who created an ad. In real life, users would need to register and sign in, and only the user who created an ad could edit or delete it. Other roles could be added too, such as an admin who can remove any ad. This can be discussed.
 
 ## Keeping the JSON file consistent
 
