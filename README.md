@@ -39,14 +39,6 @@ cd client && npm test             # client: query building, validation, address 
 cd client && npm run typecheck
 ```
 
-### Load 10,000 ads
-
-```bash
-dotnet run --project tools/BulletinBoard.DataGen -c Release -- 10000 server/BulletinBoard.Api/data
-```
-
-Stop the API first: it reads `ads.json` once, when it starts.
-
 ## Keeping the JSON file consistent
 
 The API is assumed to run as **one server**. It keeps the ads in memory and is the only process that reads or writes `ads.json`. Writes (create / edit / delete) go one at a time through a `SemaphoreSlim`. Each one saves the file through a temp file and a rename, so a crash never leaves half a file.
