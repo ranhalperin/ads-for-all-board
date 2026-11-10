@@ -78,7 +78,9 @@ export const t = {
   errLocation: 'Set the location on the map',
   errGeneric: 'Something went wrong. Try again.',
   errNetwork: 'Can’t reach the server. Check that the API is running.',
-  errLocationDenied: 'Location is unavailable. Allow location access in the browser and try again.',
+  errLocationBlocked: 'Location is blocked for this site. Allow it from the icon next to the address bar, then try again.',
+  errLocationUnavailable: 'Your device can’t find its location. Check that location is turned on (in Windows: Settings → Privacy & security → Location).',
+  errLocationTimeout: 'Finding your location took too long. Try again.',
   errFixFields: 'Fix the highlighted fields.',
 
   mapAttribution: '© OpenStreetMap contributors',

@@ -5,7 +5,7 @@ import { AdPanel } from './components/AdPanel'
 import { AdsList } from './components/AdsList'
 import { AdsMap } from './components/AdsMap'
 import { FiltersBar } from './components/FiltersBar'
-import { getCurrentLocation } from './geo'
+import { getCurrentLocation, locationErrorMessage } from './geo'
 import { useDebounced } from './hooks'
 import { loadMyName, saveMyName } from './myName'
 import { t } from './strings'
@@ -96,8 +96,8 @@ export default function App() {
       setMyLocation(here)
       setFocus(here)
       updateFilters({ radiusKm: km })
-    } catch {
-      setLocationError(t.errLocationDenied)
+    } catch (err) {
+      setLocationError(locationErrorMessage(err))
     } finally {
       setLocating(false)
     }
