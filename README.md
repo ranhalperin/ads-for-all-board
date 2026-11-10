@@ -89,7 +89,7 @@ Errors are `ProblemDetails` JSON: 400 validation (with field errors), 404, 503 +
 | `AdsController` | HTTP only: binds the request, calls the service |
 | `AdService` | Turns the query string into an `AdSearch` and the results into JSON; sets id / dates, trims text |
 | `JsonFileAdRepository` + `AdFilter` (`Repositories.JsonFile`; the contract `IAdRepository` and its search types stay in `Repositories`) | Runs the search (filters, distance, newest first, paging, pins) on the in-memory snapshot, and the write procedure below |
-| `SharedFolderFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
+| `JsonFileStore` (`IFileStore`) | Streams `ads.json` in and out; safe save (temp file, then rename) |
 | `GeoDistance` / `BoundingBox` | Haversine distance; cheap rectangle check before the exact circle |
 
 **No accounts:** the board is open to everyone, as the assignment asks. Anyone can edit or delete any ad, in the UI and through the API; the server doesn't check who made it. A real deployment would add a login (JWT) and store the user id on each ad, or give each ad a secret edit token returned when it is created.

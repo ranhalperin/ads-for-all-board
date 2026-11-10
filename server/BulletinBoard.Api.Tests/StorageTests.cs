@@ -78,7 +78,7 @@ public class StorageTests : IDisposable
     [Fact]
     public async Task Second_writer_waits_for_the_first()
     {
-        var gate = new GatedStore(new SharedFolderFileStore(_store.Folder));
+        var gate = new GatedStore(new JsonFileStore(_store.Folder));
         var server = _store.NewServer(gate);
         await server.AllAsync();
 
@@ -97,7 +97,7 @@ public class StorageTests : IDisposable
     [Fact]
     public async Task Writer_gives_up_with_busy_after_the_lock_timeout()
     {
-        var gate = new GatedStore(new SharedFolderFileStore(_store.Folder));
+        var gate = new GatedStore(new JsonFileStore(_store.Folder));
         var server = _store.NewServer(gate, new StorageOptions { LockTimeoutSeconds = 1 });
         await server.AllAsync();
 

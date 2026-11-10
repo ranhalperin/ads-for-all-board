@@ -16,7 +16,7 @@ public sealed class TempStore : IDisposable
 
     /// <summary>A new repository on this folder, with empty memory: like starting the API again.</summary>
     public JsonFileAdRepository NewServer(IFileStore? store = null, StorageOptions? options = null) => new(
-        store ?? new SharedFolderFileStore(Folder),
+        store ?? new JsonFileStore(Folder),
         options ?? Options,
         NullLogger<JsonFileAdRepository>.Instance);
 

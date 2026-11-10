@@ -15,7 +15,7 @@ var seedFile = storage.SeedFile is null ? null : Path.Combine(contentRoot, stora
 builder.Services.AddSingleton(storage);
 builder.Services.AddSingleton(folder);
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IFileStore>(_ => new SharedFolderFileStore(folder, seedFile));
+builder.Services.AddSingleton<IFileStore>(_ => new JsonFileStore(folder, seedFile));
 // Singleton on purpose: one in-memory snapshot and one local lock for the whole process.
 builder.Services.AddSingleton<IAdRepository, JsonFileAdRepository>();
 builder.Services.AddScoped<IAdService, AdService>();

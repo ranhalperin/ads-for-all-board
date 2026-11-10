@@ -4,12 +4,12 @@ using BulletinBoard.Api.Models;
 namespace BulletinBoard.Api.Storage;
 
 /// <summary>ads.json in one folder, created from the seed file the first time.</summary>
-public sealed class SharedFolderFileStore : IFileStore
+public sealed class JsonFileStore : IFileStore
 {
     private const int BufferSize = 64 * 1024;
     private readonly StorageFolder _folder;
 
-    public SharedFolderFileStore(StorageFolder folder, string? seedFile = null)
+    public JsonFileStore(StorageFolder folder, string? seedFile = null)
     {
         _folder = folder;
         EnsureFiles(seedFile);

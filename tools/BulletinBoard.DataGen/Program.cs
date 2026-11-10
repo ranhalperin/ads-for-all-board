@@ -47,7 +47,7 @@ for (var i = 0; i < count; i++)
     });
 }
 
-var store = new SharedFolderFileStore(folder);
+var store = new JsonFileStore(folder);
 var timer = Stopwatch.StartNew();
 await store.WriteAdsAsync(ads, CancellationToken.None);
 
