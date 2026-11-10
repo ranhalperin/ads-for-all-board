@@ -10,7 +10,7 @@ describe('toQueryParams', () => {
   })
 
   it('adds paging when a page is given', () => {
-    expect(toQueryParams(DEFAULT_FILTERS, null, 3)).toEqual({ page: '3', pageSize: '20' })
+    expect(toQueryParams(DEFAULT_FILTERS, null, 3)).toEqual({ page: '3', pageSize: '5' })
   })
 
   it('trims the search and drops empty or invalid prices', () => {
